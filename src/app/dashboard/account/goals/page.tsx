@@ -71,13 +71,15 @@ export default function Page(): React.JSX.Element {
                     <Grid xs={12} md={6} lg={4}>
                         <Divider orientation="horizontal" flexItem sx={{ mr: "-1px" }} />
                         <Stack direction="row" justifyContent="space-between">
-                            <p>Complete a private quest</p>
+                            <Typography variant="body1">Complete a private quest</Typography>
 
-                            <p>0/1</p>
+                            <Typography variant="body1">0/1</Typography>
                         </Stack>
                     </Grid>
                 </Grid>
 
+                <br />
+                
                 <Stack direction="row" justifyContent="flex-end">
                     <Button variant="contained" onClick={toggleUpdateGoalsForm}>
                         Update Goals
