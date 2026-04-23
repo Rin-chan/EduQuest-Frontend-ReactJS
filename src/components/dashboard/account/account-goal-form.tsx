@@ -18,7 +18,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import MenuItem from '@mui/material/MenuItem/MenuItem';
-import { questsAvailable } from '@/constants';
+import { goalsAvailable } from '@/constants';
 
 interface AccountGoalFormProps {
     open: boolean;
@@ -114,9 +114,9 @@ export function AccountGoalForm({open, setOpen}: AccountGoalFormProps): React.JS
                                             setGoals(newGoals);
                                         }}
                                     >
-                                        {questsAvailable.map((quest) => (
-                                            <MenuItem key={quest.id} value={quest.name}>
-                                                {quest.name}
+                                        {goalsAvailable.map((goal) => (
+                                            <MenuItem key={goal.id} value={goal.name}>
+                                                {goal.name}
                                             </MenuItem>
                                         ))}
                                     </TextField>
