@@ -6,6 +6,7 @@ import Typography from "@mui/material/Typography";
 import Points from "../../../../public/assets/point.svg"
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
+import { paths } from "@/paths";
 
 export const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
   height: 10,
@@ -73,7 +74,9 @@ export function LinearProgressForLevel(
             placement="bottom"
             arrow
           >
-            <Stack direction="row" spacing={0.5} alignItems="center">
+            <Stack direction="row" spacing={0.5} alignItems="center" onClick={() => {
+              window.location.href = paths.dashboard.store;
+            }}>
               <Typography variant="body2" color="text.secondary">
                 {Math.round(absValue)}
               </Typography>
