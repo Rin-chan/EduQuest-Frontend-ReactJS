@@ -9,8 +9,10 @@ import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import useTheme from '@mui/material/styles/useTheme';
+import Popover from '@mui/material/Popover/Popover';
 
 import type { Course } from "@/types/course";
+import { AccountPopup } from '../account/account-popup';
 
 interface LeaderboardTableProps {
   course: Course;
@@ -39,6 +41,9 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
     const [selected, setSelected] = React.useState<number>(-1);
     const [page, setPage] = React.useState(0);
     const [rowsPerPage, setRowsPerPage] = React.useState(2);
+    const [anchorEl, setAnchorEl] = React.useState(-1);
+    const [anchorElPosHorizontal, setAnchorElPosHorizontal] = React.useState(0);
+    const [anchorElPosVertical, setAnchorElPosVertical] = React.useState(0);
 
     // For cosmetic
     const handleClick = (event: React.MouseEvent<unknown>, id: number) => {
@@ -47,6 +52,14 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
             return;
         }
         setSelected(id);
+
+        setAnchorEl(id);
+        setAnchorElPosHorizontal(event.clientX);
+        setAnchorElPosVertical(event.clientY);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(-1);
     };
 
     const handleChangePage = (event: unknown, newPage: number) => {
@@ -72,7 +85,7 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
         <Paper sx={{ width: '100%', mb: 2 }}>
             <TableContainer>
             <Table
-                sx={{ minWidth: 750 }}
+                sx={{ minWidth: '80vw' }}
                 aria-labelledby="tableTitle"
                 size="medium"
             >
@@ -95,9 +108,25 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
                         aria-checked={isItemSelected}
                         tabIndex={-1}
                         key={row.id}
-                        selected={isItemSelected}
                         sx={{ cursor: 'pointer' }}
                     >
+                        <Popover
+                            id={row.id}
+                            open={anchorEl === row.id ?  'simple-popover' : undefined}
+                            anchorEl={anchorEl}
+                            onClose={handleClose}
+                            anchorReference="anchorPosition"
+                            anchorPosition={{
+                                top: anchorElPosVertical,
+                                left: anchorElPosHorizontal
+                            }}
+                            anchorOrigin={{
+                                vertical: 'top',
+                                horizontal: 'left',
+                            }}
+                        >
+                            <AccountPopup userId={row.id} />
+                        </Popover>
                         <TableCell>{row.id}</TableCell>
                         <TableCell align="center">{row.user}</TableCell>
                         <TableCell align="right">{row.score}</TableCell>
