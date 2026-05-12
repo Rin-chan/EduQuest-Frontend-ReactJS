@@ -4,7 +4,7 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
-import CardHeader from '@mui/material/CardHeader';
+import IconButton from '@mui/material/IconButton';
 import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Unstable_Grid2';
@@ -21,6 +21,17 @@ import FormLabel from "@mui/material/FormLabel";
 import {TextField} from "@mui/material";
 import {User as UserIcon} from "@phosphor-icons/react/dist/ssr/User";
 import {updateEduquestUser} from "@/api/services/eduquest-user";
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import Popover from '@mui/material/Popover/Popover';
+import { X } from "@phosphor-icons/react";
+import CircleIcon from '@mui/icons-material/Circle';
+import Box from "@mui/material/Box";
+import Badge from '@mui/material/Badge';
+import Checkbox from '@mui/material/Checkbox';
+import {DraggableBadge} from "@/components/dashboard/account/account-drag-and-drop";
 
 export function AccountDetailsForm(): React.JSX.Element {
   const { eduquestUser, avatar, checkSession } = useUser();
@@ -31,6 +42,20 @@ export function AccountDetailsForm(): React.JSX.Element {
     name: '?',
   });
   const [submitStatus, setSubmitStatus] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  
+  const [file, setFile] = React.useState<File | null>(null);
+  const [color, setColor] = React.useState<string>('white');
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [borderOption, setBorderOption] = React.useState<number>(-1);
+  const [bannerOption, setBannerOption] = React.useState<number>(-1);
+  const [badgesSelected, setBadgesSelected] = React.useState<string[]>([]);
+
+  const [openAvatarEdit, setOpenAvatarEdit] = React.useState(false);
+  const [openAvatar, setOpenAvatar] = React.useState(false);
+  const [openBackground, setOpenBackground] = React.useState(false);
+  const [openBorder, setOpenBorder] = React.useState(false);
+  const [openBanner, setOpenBanner] = React.useState(false);
+  const [openBadges, setOpenBadges] = React.useState(false);
 
   const refreshUser = async (): Promise<void> => {
     if (checkSession) {
@@ -100,22 +125,159 @@ export function AccountDetailsForm(): React.JSX.Element {
     });
   }, [eduquestUser, setUserPhotoAvatar]);
 
+  const openAvatarEditChange = (event): void => {
+    setAnchorEl(event.currentTarget);
+    setOpenAvatarEdit(true);
+  }
+
+  const closeAvatarEditChange = (): void => {
+    setAnchorEl(null);
+    setOpenAvatarEdit(false);
+  }
+
+  const openAvatarChange = (): void => {
+    setOpenAvatar(true);
+    closeAvatarEditChange();
+  }
+
+  const closeAvatarChange = async (): Promise<void> => {
+    setOpenAvatar(false);
+    setFile(null);
+    setColor('white');
+  }
+
+  const submitAvatarChange = async (): Promise<void> => {
+    // Save the avatar change (file or color) to the server here
+    closeAvatarChange();
+  }
+
+  const openBackgroundChange = (event) => {
+    setAnchorEl(event.currentTarget);
+    setOpenBackground(true);
+  }
+  const closeBackgroundChange = async (): Promise<void> => {
+    setOpenBackground(false);
+    setAnchorEl(null);
+  }
+
+  const submitBackgroundChange = async (): Promise<void> => {
+    // Save the background change (file) to the server here
+    closeBackgroundChange();
+  }
+
+  const openBorderChange = (): void => {
+    setOpenBorder(true);
+    setOpenAvatarEdit(false);
+  }
+  const closeBorderChange = async (): Promise<void> => {
+    setOpenBorder(false);
+  }
+
+  const submitBorderChange = async (): Promise<void> => {
+    // Save the border change (color) to the server here
+    closeBorderChange();
+    setBorderOption(-1);
+  }
+
+  const openBannerChange = (): void => {
+    setOpenBanner(true);
+  }
+  const closeBannerChange = async (): Promise<void> => {
+    setOpenBanner(false);
+  }
+
+  const submitBannerChange = async (): Promise<void> => {
+    // Save the banner change (color) to the server here
+    closeBannerChange();
+    setBannerOption(-1);
+  }
+
+  const openBadgesChange = (): void => {
+    setOpenBadges(true);
+  }
+  const closeBadgesChange = async (): Promise<void> => {
+    setOpenBadges(false);
+    setBadgesSelected([]);
+  }
+
+  const submitBadgesChange = async (): Promise<void> => {
+    // Save the badges change (color) to the server here
+    closeBadgesChange();
+  }
+
+  function moveBadge(dragIndex: number, hoverIndex: number) {
+    setBadgesSelected((prev) => {
+      const updated = [...prev];
+
+      const draggedItem = updated[dragIndex];
+
+      updated.splice(dragIndex, 1);
+      updated.splice(hoverIndex, 0, draggedItem);
+
+      return updated;
+    });
+  }
+
   return (
     <form onSubmit={handleSubmit}>
       <Card>
-        <CardHeader
-          subheader="Update nickname"
-          title="Profile"
-          avatar={
-            showUserInitials ?
-              <UserAvatar size='48px' {...userAvatarProps}/>
-              : userPhoto ?
-              <Avatar
-                src={userPhoto}
-                sx={{width: 48, height: 48}}
-              /> : <UserIcon size={32} color="var(--mui-palette-primary-main)" />
-          }
-        />
+        <CardContent style={{backgroundImage: 'linear-gradient(to right, white, yellow, white)'}}>
+          <Grid container spacing={3}>
+            <Grid sm={6} xs={12}>
+              <Grid style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', marginBottom: '64px' }}>
+                <IconButton onClick={openAvatarEditChange}>
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      width: 64,
+                      height: 64,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src="https://png.pngtree.com/png-vector/20250724/ourmid/pngtree-elegant-gold-circle-frame-png-image_16679818.webp"
+                      sx={{
+                        position: 'absolute',
+                          width: 64,
+                          height: 64,
+                          top: 0,
+                          left: 0,
+                          pointerEvents: 'none',
+                          zIndex: 1,
+                      }}
+                    />
+                    {
+                      showUserInitials ?
+                        <UserAvatar size='48px' {...userAvatarProps}/>
+                        : userPhoto ?
+                        <Avatar
+                          src={userPhoto}
+                          sx={{width: 48, height: 48}}
+                        /> : <UserIcon size={32} color="var(--mui-palette-primary-main)" />
+                    }
+                    </Box>
+                </IconButton>
+
+                <Grid style={{ display: 'flex', flexDirection: 'column'}}>
+                  <Typography variant="overline">Profile</Typography>
+                  <Button variant="contained" onClick={openBadgesChange}>Badges</Button>
+                </Grid>
+              </Grid>
+
+              <Grid style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
+                <Button variant="contained" onClick={openBackgroundChange}>Change Background</Button>
+                <Button variant="contained" onClick={openBannerChange}>Change Banner</Button>
+              </Grid>
+            </Grid>
+
+            <Grid sm={6} xs={12}>
+              <Typography variant="overline" color="text.secondary">Display of profile</Typography>
+            </Grid>
+          </Grid>
+        </CardContent>
 
         <Divider/>
         {eduquestUser ? (
@@ -212,6 +374,461 @@ export function AccountDetailsForm(): React.JSX.Element {
         {submitStatus.message}
       </Alert> : null}
 
+      <Popover
+          id={openAvatarEdit ? 'simple-popover' : undefined}
+          open={openAvatarEdit}
+          anchorEl={anchorEl}
+          onClose={closeAvatarEditChange}
+          anchorOrigin={{
+              vertical: 'center',
+              horizontal: 'left',
+          }}
+      >
+          <Stack direction="row" sx={{ justifyContent: 'flex-end', padding: 1 }}>
+            <Button variant="text" onClick={openAvatarChange}>Avatar</Button>
+            <Divider orientation='vertical' flexItem sx={{ marginX: 1 }}/>
+            <Button variant="text" onClick={openBorderChange}>Border</Button>
+          </Stack>
+      </Popover>
+
+      <Dialog open={openAvatar} onClose={closeAvatarChange}>
+        <DialogTitle>
+            <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
+            Change Avatar
+            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={closeAvatarChange}></Button>
+            </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Card sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+            <CardContent>
+              <Button
+                variant="text"
+                component="label"
+              >
+                <input
+                    type="file"
+                    id="file-upload"
+                    name="file"
+                    accept="image/*"
+                    hidden
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                        if (event.target.files && event.target.files.length > 0) {
+                            setFile(event.target.files[0]);
+                        }
+                    }}
+                />
+                {file ? 
+                  <Avatar
+                    src={URL.createObjectURL(file)}
+                    sx={{width: 48, height: 48}}
+                  /> :
+                  <Typography variant='body1'>Upload File</Typography>
+                }
+              </Button>
+            </CardContent>
+
+            <Divider orientation='vertical' flexItem/>
+
+            <CardContent>
+              <Typography variant="body1">Choose Preset</Typography>
+
+              <Grid direction="row" container>
+                <Grid sm={3} xs={6}>
+                  <IconButton onClick={() => setColor('red')}>
+                    <Avatar sx={{ bgcolor: 'red' }} />
+                  </IconButton>
+                </Grid>
+
+                <Grid sm={3} xs={6}>
+                  <IconButton onClick={() => setColor('blue')}>
+                    <Avatar sx={{ bgcolor: 'blue' }} />
+                  </IconButton>
+                </Grid>
+
+                <Grid sm={3} xs={6}>
+                  <IconButton onClick={() => setColor('yellow')}>
+                    <Avatar sx={{ bgcolor: 'yellow' }} />
+                  </IconButton>
+                </Grid>
+
+                <Grid sm={3} xs={6}>
+                  <IconButton onClick={() => setColor('green')}>
+                    <Avatar sx={{ bgcolor: 'green' }} />
+                  </IconButton>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeAvatarChange} variant="contained" color="error">Cancel</Button>
+          <Button onClick={submitAvatarChange} variant="contained" color="primary">Submit</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Popover
+          id={openBackground ? 'simple-popover' : undefined}
+          open={openBackground}
+          anchorEl={anchorEl}
+          onClose={closeBackgroundChange}
+          anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left',
+          }}
+      >
+          <Card>
+            <CardContent>
+              <Grid direction="row" container>
+                <Grid sm={3} xs={6}>
+                  <IconButton onClick={() => setColor('red')}>
+                    <CircleIcon htmlColor="red" fontSize="large" />
+                  </IconButton>
+                </Grid>
+
+                <Grid sm={3} xs={6}>
+                  <IconButton onClick={() => setColor('blue')}>
+                    <CircleIcon htmlColor="blue" fontSize="large" />
+                  </IconButton>
+                </Grid>
+
+                <Grid sm={3} xs={6}>
+                  <IconButton onClick={() => setColor('yellow')}>
+                    <CircleIcon htmlColor="yellow" fontSize="large" />
+                  </IconButton>
+                </Grid>
+
+                <Grid sm={3} xs={6}>
+                  <IconButton onClick={() => setColor('green')}>
+                    <CircleIcon htmlColor="green" fontSize="large" />
+                  </IconButton>
+                </Grid>
+              </Grid>
+              
+              <Stack direction="row" sx={{ justifyContent: 'flex-end', marginTop: 2 }}>
+                <Button variant="contained" onClick={submitBackgroundChange}>Submit</Button>
+              </Stack>
+            </CardContent>
+          </Card>
+      </Popover>
+
+      <Dialog open={openBorder} onClose={closeBorderChange}>
+        <DialogTitle>
+            <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
+            Change Border
+            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={closeBorderChange}></Button>
+            </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Card sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+            <CardContent>
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: 64,
+                  height: 64,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Box
+                  component="img"
+                  src="https://png.pngtree.com/png-vector/20250724/ourmid/pngtree-elegant-gold-circle-frame-png-image_16679818.webp"
+                  sx={{
+                    position: 'absolute',
+                    width: 64,
+                    height: 64,
+                    top: 0,
+                    left: 0,
+                    pointerEvents: 'none',
+                    zIndex: 1,
+                  }}
+                />
+                {
+                  showUserInitials ?
+                    <UserAvatar size='48px' {...userAvatarProps}/>
+                    : userPhoto ?
+                    <Avatar
+                      src={userPhoto}
+                      sx={{width: 48, height: 48}}
+                    /> : <UserIcon size={32} color="var(--mui-palette-primary-main)" />
+                }
+              </Box>
+            </CardContent>
+
+            <Divider orientation='vertical' flexItem/>
+
+            <CardContent>
+              <Typography variant="body1">Choose Border</Typography>
+
+              <Grid direction="row" container spacing={3}>
+                <Grid sm={6} xs={12}>
+                  <IconButton onClick={() => setBorderOption(1)}>
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        width: 64,
+                        height: 64,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src="https://png.pngtree.com/png-vector/20250724/ourmid/pngtree-elegant-gold-circle-frame-png-image_16679818.webp"
+                        sx={{
+                          position: 'absolute',
+                          width: 64,
+                          height: 64,
+                          top: 0,
+                          left: 0,
+                          pointerEvents: 'none',
+                        }}
+                      />
+                      <Avatar sx={{width: 48, height: 48}}/>
+                    </Box>
+                  </IconButton>
+                </Grid>
+
+                <Grid sm={6} xs={12}>
+                  <IconButton onClick={() => setBorderOption(2)}>
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        width: 64,
+                        height: 64,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src="https://png.pngtree.com/png-clipart/20230403/original/pngtree-circle-border-design-png-image_9024072.png"
+                        sx={{
+                          position: 'absolute',
+                          width: 64,
+                          height: 64,
+                          top: 0,
+                          left: 0,
+                          pointerEvents: 'none',
+                          zIndex: 1,
+                        }}
+                      />
+                      <Avatar sx={{width: 48, height: 48}}/>
+                    </Box>
+                  </IconButton>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeBorderChange} variant="contained" color="error">Cancel</Button>
+          <Button onClick={submitBorderChange} variant="contained" color="primary">Submit</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openBanner} onClose={closeBannerChange}>
+        <DialogTitle>
+            <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
+            Change Banner
+            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={closeBannerChange}></Button>
+            </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Card sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+            <CardContent>
+              <Stack>
+                  <Grid 
+                    direction="row" 
+                    md={6} 
+                    xs={12} 
+                    sx={{
+                      backgroundImage: 'url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQic0vjbZ9kDfF0KQMCQso5MSaWTypoMte02w&s)', 
+                      backgroundSize: 'cover', 
+                      backgroundPosition: 'center', 
+                      minHeight: '5em', 
+                      minWidth: '10em',
+                      border: '1px solid black'
+                    }}
+                    >
+                      <Stack direction="row" sx={{padding: 2}}>
+                          <Box>
+                              <Avatar
+                                  src={`/assets/avatar-1.png`}
+                                  alt={`Avatar of user 1`}
+                                  sx={{ 
+                                    width: 64, 
+                                    height: 64,
+                                  }}
+                              />
+                          </Box>
+
+                          <Stack direction="column" spacing={0} sx={{display: 'flex', paddingLeft: 3, justifyContent: 'center'}}>
+                              <Typography variant="h4">Name</Typography>
+                              <Stack direction="row" spacing={1} sx={{display: 'flex', alignItems: 'center'}}>
+                                  <img
+                                      width={25}
+                                      height={25}
+                                  />
+                              </Stack>
+                          </Stack>
+                      </Stack>
+                  </Grid>
+              </Stack>
+            </CardContent>
+
+            <Divider orientation='vertical' flexItem/>
+
+            <CardContent>
+              <Typography variant="body1">Choose Banner</Typography>
+
+              <Grid direction="row" container spacing={2}>
+                <Grid>
+                  <Button onClick={() => setBannerOption(1)}>
+                    <Grid 
+                      direction="row"
+                      sx={{
+                        backgroundImage: '', 
+                        backgroundSize: 'cover', 
+                        backgroundPosition: 'center', 
+                        minHeight: '5em', 
+                        minWidth: '10em',
+                        border: '1px solid black'
+                      }}
+                      >
+                    </Grid>
+                  </Button>
+                </Grid>
+
+                <Grid>
+                  <Button onClick={() => setBannerOption(2)}>
+                    <Grid 
+                      direction="row" 
+                      sx={{
+                        backgroundImage: 'url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQic0vjbZ9kDfF0KQMCQso5MSaWTypoMte02w&s)', 
+                        backgroundSize: 'cover', 
+                        backgroundPosition: 'center', 
+                        minHeight: '5em', 
+                        minWidth: '10em',
+                        border: '1px solid black'
+                      }}
+                      >
+                    </Grid>
+                  </Button>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeBannerChange} variant="contained" color="error">Cancel</Button>
+          <Button onClick={submitBannerChange} variant="contained" color="primary">Submit</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openBadges} onClose={closeBadgesChange}>
+        <DialogTitle>
+            <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
+            Change Badges
+            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={closeBadgesChange}></Button>
+            </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Card sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+            <CardContent>
+                <div>
+                  {badgesSelected.map((badge, index) => (
+                    <DraggableBadge
+                      key={`${badge}-${index}`}
+                      badge={badge}
+                      index={index}
+                      moveBadge={moveBadge}
+                    />
+                  ))}
+                </div>
+            </CardContent>
+
+            <Divider orientation='vertical' flexItem/>
+
+            <CardContent>
+              <Typography variant="body1">Choose Badges</Typography>
+
+              <Stack direction="row" spacing={2} sx={{marginTop: 2}}>
+                <Button 
+                  variant="text"
+                  onClick={() => {
+                    if (badgesSelected.includes('badge1')) {
+                      setBadgesSelected(badgesSelected.filter(badge => badge !== 'badge1'));
+                    } else {
+                      setBadgesSelected([...badgesSelected, 'badge1']);
+                    }
+                  }}
+                >
+                  <Badge
+                    badgeContent={
+                      <Checkbox
+                        checked={badgesSelected.includes('badge1')}
+                      />
+                    } 
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'right',
+                    }}
+                  >
+                    <Box 
+                      component="img"
+                      src="/assets/first_attempt_badge.svg"
+                      sx={{
+                        width: 64,
+                        height: 64,
+                      }}
+                      />
+                  </Badge>
+                </Button>
+
+                <Button 
+                  variant="text"
+                  onClick={() => {
+                    if (badgesSelected.includes('badge2')) {
+                      setBadgesSelected(badgesSelected.filter(badge => badge !== 'badge2'));
+                    } else {
+                      setBadgesSelected([...badgesSelected, 'badge2']);
+                    }
+                  }}
+                >
+                  <Badge
+                    badgeContent={
+                      <Checkbox
+                        checked={badgesSelected.includes('badge2')}
+                      />
+                    } 
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'right',
+                    }}
+                  >
+                    <Box 
+                      component="img"
+                      src="/assets/full_attendance_badge.svg"
+                      sx={{
+                        width: 64,
+                        height: 64,
+                      }}
+                      />
+                  </Badge>
+                </Button>
+              </Stack>
+            </CardContent>
+          </Card>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeBadgesChange} variant="contained" color="error">Cancel</Button>
+          <Button onClick={submitBadgesChange} variant="contained" color="primary">Submit</Button>
+        </DialogActions>
+      </Dialog>
     </form>
   );
 }
