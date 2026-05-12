@@ -3,6 +3,7 @@ import Typography from '@mui/material/Typography/Typography';
 import Grid from '@mui/material/Grid/Grid';
 import Box from '@mui/material/Box/Box';
 import Stack from "@mui/material/Stack";
+import Avatar from "@mui/material/Avatar/Avatar";
 
 interface AccountPopupProps {
   userId: number;
@@ -26,29 +27,49 @@ export function AccountPopup({ userId }: AccountPopupProps): React.JSX.Element {
             >
                 <Grid direction="row" md={6} xs={12} sx={{backgroundImage: 'url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQic0vjbZ9kDfF0KQMCQso5MSaWTypoMte02w&s)', backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '5em'}} >
                     <Stack direction="row" sx={{padding: 2}}>
-                        <Box>
-                            <img
+                        <Box
+                            sx={{
+                                position: 'relative',
+                                width: 100,
+                                height: 100,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Avatar
                                 src={`/assets/avatar-1.png`}
                                 alt={`Avatar of user ${userId}`}
-                                width={'75em'}
-                                height={'75em'}
-                                style={{ borderRadius: '50%', position: 'relative', top: 1, left: 1 }}
+                                sx={{
+                                    width: 70,
+                                    height: 70
+                                }}
                             />
-                            <img
+                            <Box
+                                component="img"
                                 src={'https://png.pngtree.com/png-vector/20250724/ourmid/pngtree-elegant-gold-circle-frame-png-image_16679818.webp'}
-                                width={'110em'}
-                                height={'110em'}
-                                style={{ position: 'absolute', top: 0, left: 0 }}
+                                sx={{
+                                    position: 'absolute',
+                                    width: 100,
+                                    height: 100,
+                                    top: 0,
+                                    left: 0,
+                                    pointerEvents: 'none',
+                                    zIndex: 1,
+                                }}
                             />
                         </Box>
 
                         <Stack direction="column" spacing={0} sx={{display: 'flex', paddingLeft: 3, justifyContent: 'center'}}>
                             <Typography variant="h4">Name</Typography>
                             <Stack direction="row" spacing={1} sx={{display: 'flex', alignItems: 'center'}}>
-                                <img
+                                <Box
+                                    component="img"
                                     src={`/assets/first_attempt_badge.svg`}
-                                    width={25}
-                                    height={25}
+                                    sx={{
+                                        width: 40,
+                                        height: 40,
+                                    }}
                                 />
                             </Stack>
                         </Stack>
