@@ -40,7 +40,7 @@ import {createQuest} from "@/api/services/quest";
 import {createQuestionsAndAnswers} from "@/api/services/question";
 import type {GeneratedQuestion, GeneratedQuestions} from "@/types/question"
 import type {AnswerNewForm} from "@/types/answer";
-
+import CheckBox from "@mui/material/Checkbox";
 
 interface CourseFormProps {
   onFormSubmitSuccess: () => void;
@@ -55,6 +55,7 @@ export function GenerateQuestForm({onFormSubmitSuccess}: CourseFormProps): React
   const questMaxAttemptsRef = React.useRef<HTMLInputElement>(null);
   const numQuestionsRef = React.useRef<HTMLInputElement>(null);
   const difficultyRef = React.useRef<HTMLInputElement>(null);
+  const [checked, setChecked] = React.useState(false);
 
   const [courseGroups, setCourseGroups] = React.useState<CourseGroup[]>();
   const [documents, setDocuments] = React.useState<Document[]>();
@@ -195,6 +196,7 @@ export function GenerateQuestForm({onFormSubmitSuccess}: CourseFormProps): React
     const maxAttempts = Number(questMaxAttemptsRef.current?.value);
     const numQuestions = Number(numQuestionsRef.current?.value);
     const difficulty = difficultyRef.current?.value || '';
+    const shortAns = checked;
     const selectedSourceDocument = selectedDocument ?? documents?.find((doc) => doc.id === selectedDocumentId) ?? documents?.[0] ?? null;
 
     if (!questName) {
@@ -264,7 +266,8 @@ export function GenerateQuestForm({onFormSubmitSuccess}: CourseFormProps): React
       const generatedQuestions = await generateQuestions(
         filename?.split('/').pop() || '',
         numQuestions,
-        difficulty
+        difficulty,
+        shortAns
       );
 
       if (!generatedQuestions || !Array.isArray(generatedQuestions.questions)) {
@@ -299,12 +302,13 @@ export function GenerateQuestForm({onFormSubmitSuccess}: CourseFormProps): React
     }
   }
 
-  const generateQuestions = async (filename: string, numQuestions: number, difficulty: string): Promise<GeneratedQuestions | null> => {
+  const generateQuestions = async (filename: string, numQuestions: number, difficulty: string, shortAns: boolean): Promise<GeneratedQuestions | null> => {
     try {
       const response: AxiosResponse<GeneratedQuestions> = await microService.post(`/generate_questions_from_document`, {
         document_id: filename,
         num_questions: numQuestions,
-        difficulty
+        difficulty,
+        short_answer: shortAns
       });
       logger.debug('Generate Questions Success:', response.data);
       return response.data;
@@ -541,6 +545,16 @@ export function GenerateQuestForm({onFormSubmitSuccess}: CourseFormProps): React
                   <MenuItem value="Difficult">Difficult</MenuItem>
                 </Select>
                 {formErrors.difficulty ? <FormHelperText>{formErrors.difficulty}</FormHelperText> : null}
+              </FormControl>
+            </Grid>
+            <Grid md={4} xs={12}>
+              <FormControl fullWidth>
+                <FormLabel htmlFor="shortAns">Short-Answer Question</FormLabel>
+                <CheckBox
+                  checked={checked}
+                  onChange={() => setChecked(!checked)}
+                  size="small"
+                />
               </FormControl>
             </Grid>
           </Grid>
