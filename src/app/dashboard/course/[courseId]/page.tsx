@@ -19,7 +19,7 @@ import Stack from "@mui/material/Stack";
 import Chip from "@mui/material/Chip";
 import {QuestCard} from "@/components/dashboard/quest/quest-card";
 import {useUser} from "@/hooks/use-user";
-import {CardMedia} from "@mui/material";
+import {CardMedia, Divider, Popover} from "@mui/material";
 // import {Check as CheckIcon} from "@phosphor-icons/react/dist/ssr/Check";
 // import {SignIn as SignInIcon} from "@phosphor-icons/react/dist/ssr/SignIn";
 import Box from "@mui/material/Box";
@@ -51,6 +51,7 @@ import type {UserCourseGroupEnrollment} from "@/types/user-course-group-enrollme
 import {SkeletonCourseGroupCard} from "@/components/dashboard/skeleton/skeleton-course-group-card";
 import {LeaderboardTable} from "@/components/dashboard/leaderboard/leaderboard-table";
 import {ImportDataForm} from "@/components/dashboard/course/course-import-data";
+import {TestData} from "@/components/dashboard/course/course-test-data";
 
 interface ExpandMoreProps extends IconButtonProps {
   expand: boolean;
@@ -80,6 +81,7 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
   const [showCreateCourseGroupForm, setShowCreateCourseGroupForm] = React.useState(false);
   const [showEditCourseGroupForm, setShowEditCourseGroupForm] = React.useState(false);
   const [showImportDataForm, setShowImportDataForm] = React.useState(false);
+  const [showTestData, setShowTestData] = React.useState(false);
   const [expanded, setExpanded] = React.useState(false);
   const [loadingQuests, setLoadingQuests] = React.useState(false);
   const [loadingCourse, setLoadingCourse] = React.useState(true);
@@ -88,6 +90,8 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
   const [submitStatus, setSubmitStatus] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedCourseGroupId, setSelectedCourseGroupId] = React.useState<string | null>(null);
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [openTestOption, setOpenTestOption] = React.useState(false);
 
   const handleExpandClick = (): void => {
     setExpanded(!expanded);
@@ -116,6 +120,22 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
 
   const toggleImportDataForm = (): void => {
     setShowImportDataForm(!showImportDataForm);
+    closeTestOption();
+  }
+
+  const toggleTestData = (): void => {
+    setShowTestData(!showTestData);
+    closeTestOption();
+  }
+
+  const toggleTestOption = (event): void => {
+    setAnchorEl(event.currentTarget);
+    setOpenTestOption(true);
+  }
+
+  const closeTestOption = (): void => {
+    setAnchorEl(null);
+    setOpenTestOption(false);
   }
 
   const handleDialogOpen = (): void => {
@@ -242,15 +262,16 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
     return courseGroups.find((group) => group.id.toString() === selectedCourseGroupId) || null;
   }, [courseGroups, selectedCourseGroupId]);
 
-
   return (
     <Stack spacing={3}>
       <Stack direction="row"sx={{justifyContent: 'space-between'}}>
         <Button startIcon={<CaretLeftIcon fontSize="var(--icon-fontSize-md)"/>} component={RouterLink} href={paths.dashboard.course.all}>View all Courses</Button>
 
-        <Button variant="contained" onClick={toggleImportDataForm}>
-          Import
-        </Button>
+        {eduquestUser?.is_staff ? (
+          <Button variant="contained" onClick={toggleTestOption}>
+            Quizzes/Tests
+          </Button>
+        ) : null}
       </Stack>
 
       {!showEditCourseForm && (
@@ -489,6 +510,23 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
           : null }
       </Stack>
 
+      <Popover
+          id={openTestOption ? 'simple-popover' : undefined}
+          open={openTestOption}
+          anchorEl={anchorEl}
+          onClose={closeTestOption}
+          anchorOrigin={{
+              vertical: 'center',
+              horizontal: 'left',
+          }}
+      >
+        <Stack direction="row" sx={{ justifyContent: 'flex-end', padding: 1 }}>
+          <Button variant="text" onClick={toggleTestData}>View All Data</Button>
+          <Divider orientation='vertical' flexItem sx={{ marginX: 1 }}/>
+          <Button startIcon={<UploadIcon />} variant="text" onClick={toggleImportDataForm}>Import Data</Button>
+        </Stack>
+      </Popover>
+
       {showCreateCourseGroupForm && courseGroups ?
         <CourseNewGroupForm
           onFormSubmitSuccess={async () => {
@@ -506,6 +544,15 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
           onDelete={handleDeleteCourseGroup}
         />
       ) : null}
+
+      {showTestData && course ?
+        <TestData
+          open={showTestData}
+          setOpen={setShowTestData}
+          course={course}
+        />
+        : null
+      }
 
       {showImportDataForm && course ?
         <ImportDataForm
