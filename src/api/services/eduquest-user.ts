@@ -1,5 +1,6 @@
 import apiService from "@/api/api-service";
 import type {
+  CalendarDailyCheckInResult,
   DailyCheckInResult,
   EduquestUser,
   EduquestUserUpdateForm
@@ -33,5 +34,10 @@ export const updateEduquestUser = async (id: string, eduquestUserUpdateForm: Edu
 
 export const dailyCheckIn = async (): Promise<DailyCheckInResult> => {
   const response = await apiService.post<DailyCheckInResult>('/api/eduquest-users/daily-check-in/');
+  return response.data;
+}
+
+export const getCalendarDailyCheckIn = async (): Promise<CalendarDailyCheckInResult> => {
+  const response = await apiService.post<CalendarDailyCheckInResult>('/api/eduquest-users/calendar-daily-check-in/');
   return response.data;
 }

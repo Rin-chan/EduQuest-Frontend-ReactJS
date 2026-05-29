@@ -12,20 +12,30 @@ import Button from '@mui/material/Button/Button';
 import { AccountGoalForm } from '@/components/dashboard/account/account-goal-form';
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css';
-import { useState } from 'react';
 import { isWithinInterval } from "date-fns";
+import {useUser} from "@/hooks/use-user";
+import { getCalendarDailyCheckIn } from '@/api/services/eduquest-user';
+import { useState, useEffect } from 'react';
+import dayjs from 'dayjs';
 
 export default function Page(): React.JSX.Element {
+    const { eduquestUser, checkSession } = useUser();
+    const [dates, setDates] = useState<Date[]>([]);
     const [showUpdateGoalsForm, setShowUpdateGoalsForm] = React.useState(false);
-    
-    const streak = 1;
-    const longestStreak = 2;
 
     const toggleUpdateGoalsForm = (): void => {
         setShowUpdateGoalsForm(!showUpdateGoalsForm);
     };
 
-    const [dates, setDates] = useState([new Date(2026, 3, 1), new Date(2026, 3, 2), new Date(2026, 3, 20)]);
+    useEffect(() => {
+        getCalendarDailyCheckIn()
+            .then((response) => {
+                setDates(response.map(dateStr => dayjs(dateStr).toDate()));
+            })
+            .catch((error) => {
+                console.error("Failed to load calendar daily check-in dates:", error);
+            });
+    }, []);
 
     const dateAlreadyClicked = (dates, date) => dates.some(
         d => new Date(d).getTime() === new Date(date).getTime()
@@ -97,8 +107,8 @@ export default function Page(): React.JSX.Element {
                 <Stack direction="row" justifyContent="space-around">
                     <Grid container spacing={3}>
                         <Grid xs={12}>
-                            <Typography variant="body1">Current Streak: {streak}</Typography>
-                            <Typography variant="body1">Longest streak: {longestStreak}</Typography>
+                            <Typography variant="body1">Current Streak: {eduquestUser?.daily_checkin_streak}</Typography>
+                            <Typography variant="body1">Longest streak: {eduquestUser?.daily_checkin_longest_streak}</Typography>
                         </Grid>
                     </Grid>
 

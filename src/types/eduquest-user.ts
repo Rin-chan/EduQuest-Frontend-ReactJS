@@ -32,3 +32,7 @@ export interface DailyCheckInResult {
   longest_streak: number;
   total_points: number;
 }
+
+export interface CalendarDailyCheckInResult {
+  checkin_dates: string[];
+}
