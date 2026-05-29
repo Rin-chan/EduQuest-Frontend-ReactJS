@@ -19,36 +19,33 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import MenuItem from '@mui/material/MenuItem/MenuItem';
 import { goalsAvailable } from '@/constants';
+import {useUser} from "@/hooks/use-user";
+import { UserGoals } from '@/types/eduquest-user';
+import { updateDailyGoals } from '@/api/services/eduquest-user';
+import { GasPump } from '@phosphor-icons/react/dist/ssr';
 
 interface AccountGoalFormProps {
     open: boolean;
     setOpen: (open: boolean) => void;
 }
 
-function createData(
-    id: number,
-    task: string,
-    complete: number,
-) {
-  return { id, task, complete };
-}
-
-const rows = [
-    createData(1, 'Complete a private quest', 1),
-    createData(2, 'Collect stars', 10)
-];
-
-var id = 3;
-
 export function AccountGoalForm({open, setOpen}: AccountGoalFormProps): React.JSX.Element {
-    const [goals, setGoals] = React.useState<typeof rows>(rows);
+    const { eduquestUser, checkSession } = useUser();
+    const [goals, setGoals] = React.useState<UserGoals[]>(eduquestUser?.daily_goals || []);
+    var id = eduquestUser.daily_goals.length > 0 ? eduquestUser.daily_goals[eduquestUser.daily_goals.length - 1].id + 1 : 1;
 
     const handleClose = () => {
         setOpen(false);
     };
 
     const handleAddGoal = () => {
-        const newGoals = [...goals, createData(id, '', 0)];
+        const addGoal: UserGoals = {
+            id: id,
+            task: 0,
+            complete: 0,
+            target: 0
+        };
+        const newGoals = [...goals, addGoal];
         id++;
         setGoals(newGoals);
     }
@@ -58,14 +55,35 @@ export function AccountGoalForm({open, setOpen}: AccountGoalFormProps): React.JS
         setGoals(newGoals);
     }
 
-    const handleSubmit = () => {
+    const hasDuplicateTasks = (goalList: UserGoals[]) => {
+        const taskCounts = goalList.reduce<Record<number, number>>((acc, goal) => {
+            acc[goal.task] = (acc[goal.task] || 0) + 1;
+            return acc;
+        }, {});
+        return Object.values(taskCounts).some((count) => count > 1);
+    };
+
+    const handleSubmit = async () => {
+        if (hasDuplicateTasks(goals)) {
+            alert('Please select a unique task for each goal. Duplicate tasks are not allowed.');
+            return;
+        }
+
         for (const goal of goals) {
-            if (goal.complete <= 0 || goal.complete > 100) {
+            if (goal.target <= 0 || goal.target > 100) {
                 alert('Please fix errors before submitting');
                 return;
             }
         }
-        handleClose();
+
+        try {
+            await updateDailyGoals(goals);
+            await checkSession?.();
+            handleClose();
+        } catch (error) {
+            console.error('Failed to update daily goals', error);
+            alert('Unable to save goals. Please try again.');
+        }
     };
 
     return (
@@ -107,32 +125,42 @@ export function AccountGoalForm({open, setOpen}: AccountGoalFormProps): React.JS
                                         select
                                         id={`task-${row.id}`}
                                         variant='standard'
-                                        value={row.task}
+                                        value={goalsAvailable[row.task].name}
                                         onChange={(e) => {
                                             const newGoals = [...goals];
-                                            newGoals[index].task = e.target.value;
+                                            newGoals[index].task = goalsAvailable.findIndex((g) => g.name === e.target.value);
                                             setGoals(newGoals);
                                         }}
                                     >
-                                        {goalsAvailable.map((goal) => (
-                                            <MenuItem key={goal.id} value={goal.name}>
-                                                {goal.name}
-                                            </MenuItem>
-                                        ))}
+                                        {goalsAvailable.map((goal) => {
+                                            const taskIndex = goalsAvailable.findIndex((g) => g.name === goal.name);
+                                            const isSelectedElsewhere = goals.some((selectedGoal, selectedIndex) =>
+                                                selectedIndex !== index && selectedGoal.task === taskIndex
+                                            );
+                                            return (
+                                                <MenuItem
+                                                    key={goal.id}
+                                                    value={goal.name}
+                                                    disabled={isSelectedElsewhere}
+                                                >
+                                                    {goal.name}
+                                                </MenuItem>
+                                            );
+                                        })}
                                     </TextField>
 
                                 </TableCell>
                                 <TableCell align="center">
                                     <TextField
-                                        error={row.complete <= 0 || row.complete > 100}
-                                        helperText={row.complete <= 0 ? 'Must be greater than 0' : row.complete > 100 ? 'Must be less than or equal to 100' : ''}
-                                        id={`complete-${row.id}`}
+                                        error={row.target <= 0 || row.target > 100}
+                                        helperText={row.target <= 0 ? 'Must be greater than 0' : row.target > 100 ? 'Must be less than or equal to 100' : ''}
+                                        id={`target-${row.id}`}
                                         variant='standard'
                                         type="number"
-                                        value={row.complete}
+                                        value={row.target}
                                         onChange={(e) => {
                                             const newGoals = [...goals];
-                                            newGoals[index].complete = parseInt(e.target.value) || 0;
+                                            newGoals[index].target = parseInt(e.target.value) || 0;
                                             setGoals(newGoals);
                                         }}
                                     />

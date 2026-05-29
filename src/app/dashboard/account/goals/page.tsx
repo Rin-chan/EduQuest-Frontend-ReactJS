@@ -17,6 +17,7 @@ import {useUser} from "@/hooks/use-user";
 import { getCalendarDailyCheckIn } from '@/api/services/eduquest-user';
 import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
+import { goalsAvailable } from '@/constants';
 
 export default function Page(): React.JSX.Element {
     const { eduquestUser, checkSession } = useUser();
@@ -79,12 +80,18 @@ export default function Page(): React.JSX.Element {
             <CardContent sx={{pb: '16px'}}>
                 <Grid container spacing={3}>
                     <Grid xs={12} md={6} lg={4}>
-                        <Divider orientation="horizontal" flexItem sx={{ mr: "-1px" }} />
-                        <Stack direction="row" justifyContent="space-between">
-                            <Typography variant="body1">Complete a private quest</Typography>
+                            {
+                                eduquestUser?.daily_goals.map((goal) => (
+                                    <Grid sx={{ mb: 2 }}>
+                                        <Divider orientation="horizontal" flexItem sx={{ mr: "-1px" }} />
+                                        <Stack direction="row" justifyContent="space-between">
+                                            <Typography variant="body1">{goalsAvailable[goal.task]?.name}</Typography>
 
-                            <Typography variant="body1">0/1</Typography>
-                        </Stack>
+                                            <Typography variant="body1">{goal.complete}/{goal.target}</Typography>
+                                        </Stack>
+                                    </Grid>
+                                ))
+                            }
                     </Grid>
                 </Grid>
 
