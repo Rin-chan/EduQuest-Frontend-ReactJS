@@ -29,13 +29,15 @@ export default function Page(): React.JSX.Element {
     };
 
     useEffect(() => {
-        getCalendarDailyCheckIn()
-            .then((response) => {
-                setDates(response.checkin_dates.map(dateStr => dayjs(dateStr).toDate()));
-            })
-            .catch(() => {
-                /* Ignore calendar load errors in this view */
-            });
+        if (eduquestUser) {
+            getCalendarDailyCheckIn(eduquestUser.id)
+                .then((response) => {
+                    setDates(response.checkin_dates.map(dateStr => dayjs(dateStr).toDate()));
+                })
+                .catch(() => {
+                    /* Ignore calendar load errors in this view */
+                });
+        }
     }, []);
 
     const dateAlreadyClicked = (clickedDates: Date[], date: Date): boolean => clickedDates.some(

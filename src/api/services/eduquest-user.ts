@@ -38,8 +38,8 @@ export const dailyCheckIn = async (): Promise<DailyCheckInResult> => {
   return response.data;
 }
 
-export const getCalendarDailyCheckIn = async (): Promise<CalendarDailyCheckInResult> => {
-  const response = await apiService.post<CalendarDailyCheckInResult>('/api/eduquest-users/calendar-daily-check-in/');
+export const getCalendarDailyCheckIn = async (id: number): Promise<CalendarDailyCheckInResult> => {
+  const response = await apiService.get<CalendarDailyCheckInResult>(`/api/eduquest-users/calendar-daily-check-in/?id=${id.toString()}`);
   return response.data;
 }
 
