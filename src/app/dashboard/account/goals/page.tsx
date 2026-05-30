@@ -10,7 +10,7 @@ import CardContent from "@mui/material/CardContent";
 import Divider from '@mui/material/Divider/Divider';
 import Button from '@mui/material/Button/Button';
 import { AccountGoalForm } from '@/components/dashboard/account/account-goal-form';
-import Calendar from 'react-calendar'
+import ReactCalendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css';
 import { isWithinInterval } from "date-fns";
 import {useUser} from "@/hooks/use-user";
@@ -20,7 +20,7 @@ import dayjs from 'dayjs';
 import { goalsAvailable } from '@/constants';
 
 export default function Page(): React.JSX.Element {
-    const { eduquestUser, checkSession } = useUser();
+    const { eduquestUser } = useUser();
     const [dates, setDates] = useState<Date[]>([]);
     const [showUpdateGoalsForm, setShowUpdateGoalsForm] = React.useState(false);
 
@@ -31,20 +31,20 @@ export default function Page(): React.JSX.Element {
     useEffect(() => {
         getCalendarDailyCheckIn()
             .then((response) => {
-                setDates(response.map(dateStr => dayjs(dateStr).toDate()));
+                setDates(response.checkin_dates.map(dateStr => dayjs(dateStr).toDate()));
             })
-            .catch((error) => {
-                console.error("Failed to load calendar daily check-in dates:", error);
+            .catch(() => {
+                /* Ignore calendar load errors in this view */
             });
     }, []);
 
-    const dateAlreadyClicked = (dates, date) => dates.some(
+    const dateAlreadyClicked = (clickedDates: Date[], date: Date): boolean => clickedDates.some(
         d => new Date(d).getTime() === new Date(date).getTime()
-    )
+    );
 
-    const disabledRanges = [[new Date(2020, 1, 1), new Date()]];
+    const disabledRanges: Date[][] = [[new Date(2020, 1, 1), new Date()]];
 
-    const tileClassName = ({ date }) => {
+    const tileClassName = ({ date }: { date: Date }): string | undefined => {
         if (dateAlreadyClicked(dates, date)) {
             return 'react-calendar__tile--active'
             /* this is react-calendar's default class name for an active
@@ -52,18 +52,19 @@ export default function Page(): React.JSX.Element {
         }
     }
 
-    function isWithinRange(date, range) {
+    function isWithinRange(date: Date, range: Date[]): boolean {
         return isWithinInterval(date, { start: range[0], end: range[1] });
     }
 
-    function isWithinRanges(date, ranges) {
-        return ranges.some(range => isWithinRange(date, range)) && !dateAlreadyClicked(dates, date);
+    function isWithinRanges(date: Date, ranges: Date[][]): boolean {
+        return ranges.some((range: Date[]) => isWithinRange(date, range)) && !dateAlreadyClicked(dates, date);
     }
 
-    function tileDisabled({ date, view }) {
+    function tileDisabled({ date, view }: { date: Date; view: string }): boolean {
         if (view === 'month') {
             return isWithinRanges(date, disabledRanges);
         }
+        return false;
     }
 
     return (
@@ -77,21 +78,21 @@ export default function Page(): React.JSX.Element {
                 title="Daily Goals"
             />
 
-            <CardContent sx={{pb: '16px'}}>
-                <Grid container spacing={3}>
-                    <Grid xs={12} md={6} lg={4}>
-                            {
-                                eduquestUser?.daily_goals.map((goal) => (
-                                    <Grid sx={{ mb: 2 }}>
-                                        <Divider orientation="horizontal" flexItem sx={{ mr: "-1px" }} />
-                                        <Stack direction="row" justifyContent="space-between">
-                                            <Typography variant="body1">{goalsAvailable[goal.task]?.name}</Typography>
+            <CardContent sx={{pd: '16px'}}>
+                <Grid container spacing={2}>
+                    <Grid xs={16} md={14} lg={12}>
+                        {
+                            eduquestUser?.daily_goals.map((goal) => (
+                                <Grid key={goal.id} sx={{ margin: 2 }}>
+                                    <Divider orientation="horizontal" flexItem sx={{ mr: "-1px" }} />
+                                    <Stack direction="row" justifyContent="space-between">
+                                        <Typography variant="body1">{goalsAvailable[goalsAvailable.findIndex((g) => g.id === goal.task)].name}</Typography>
 
-                                            <Typography variant="body1">{goal.complete}/{goal.target}</Typography>
-                                        </Stack>
-                                    </Grid>
-                                ))
-                            }
+                                        <Typography variant="body1">{goal.complete}/{goal.target}</Typography>
+                                    </Stack>
+                                </Grid>
+                            ))
+                        }
                     </Grid>
                 </Grid>
 
@@ -119,7 +120,7 @@ export default function Page(): React.JSX.Element {
                         </Grid>
                     </Grid>
 
-                    <Calendar
+                    <ReactCalendar
                         tileClassName={tileClassName}
                         tileDisabled={tileDisabled}
                     />

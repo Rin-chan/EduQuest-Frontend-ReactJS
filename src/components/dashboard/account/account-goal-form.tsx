@@ -18,11 +18,11 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import MenuItem from '@mui/material/MenuItem/MenuItem';
+import Alert from '@mui/material/Alert';
 import { goalsAvailable } from '@/constants';
 import {useUser} from "@/hooks/use-user";
-import { UserGoals } from '@/types/eduquest-user';
+import type { UserGoals } from '@/types/eduquest-user';
 import { updateDailyGoals } from '@/api/services/eduquest-user';
-import { GasPump } from '@phosphor-icons/react/dist/ssr';
 
 interface AccountGoalFormProps {
     open: boolean;
@@ -31,31 +31,45 @@ interface AccountGoalFormProps {
 
 export function AccountGoalForm({open, setOpen}: AccountGoalFormProps): React.JSX.Element {
     const { eduquestUser, checkSession } = useUser();
-    const [goals, setGoals] = React.useState<UserGoals[]>(eduquestUser?.daily_goals || []);
-    var id = eduquestUser.daily_goals.length > 0 ? eduquestUser.daily_goals[eduquestUser.daily_goals.length - 1].id + 1 : 1;
+    const [goals, setGoals] = React.useState<UserGoals[]>([]);
+    const [id, setId] = React.useState(1);
+    const [formError, setFormError] = React.useState<string | null>(null);
 
-    const handleClose = () => {
+    React.useEffect((): void => {
+        if (!eduquestUser) {
+            return;
+        }
+
+        setGoals(eduquestUser.daily_goals || []);
+
+        if (eduquestUser.daily_goals.length > 0) {
+            setId(Math.max(...eduquestUser.daily_goals.map((goal) => goal.id)) + 1);
+        }
+    }, [eduquestUser]);
+
+    const handleClose = (): void => {
         setOpen(false);
+        setFormError(null);
     };
 
-    const handleAddGoal = () => {
+    const handleAddGoal = (): void => {
         const addGoal: UserGoals = {
-            id: id,
-            task: 0,
+            id,
+            task: 1,
             complete: 0,
-            target: 0
+            target: 1,
         };
         const newGoals = [...goals, addGoal];
-        id++;
+        setId(id + 1);
         setGoals(newGoals);
-    }
+    };
 
-    const handleRemoveGoal = (id: number) => {
-        const newGoals = goals.filter((goal) => goal.id !== id);
+    const handleRemoveGoal = (goalId: number): void => {
+        const newGoals = goals.filter((goal) => goal.id !== goalId);
         setGoals(newGoals);
-    }
+    };
 
-    const hasDuplicateTasks = (goalList: UserGoals[]) => {
+    const hasDuplicateTasks = (goalList: UserGoals[]): boolean => {
         const taskCounts = goalList.reduce<Record<number, number>>((acc, goal) => {
             acc[goal.task] = (acc[goal.task] || 0) + 1;
             return acc;
@@ -63,15 +77,17 @@ export function AccountGoalForm({open, setOpen}: AccountGoalFormProps): React.JS
         return Object.values(taskCounts).some((count) => count > 1);
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (): Promise<void> => {
+        setFormError(null);
+
         if (hasDuplicateTasks(goals)) {
-            alert('Please select a unique task for each goal. Duplicate tasks are not allowed.');
+            setFormError('Please select a unique task for each goal. Duplicate tasks are not allowed.');
             return;
         }
 
         for (const goal of goals) {
             if (goal.target <= 0 || goal.target > 100) {
-                alert('Please fix errors before submitting');
+                setFormError('Please fix errors before submitting');
                 return;
             }
         }
@@ -81,23 +97,22 @@ export function AccountGoalForm({open, setOpen}: AccountGoalFormProps): React.JS
             await checkSession?.();
             handleClose();
         } catch (error) {
-            console.error('Failed to update daily goals', error);
-            alert('Unable to save goals. Please try again.');
+            setFormError('Unable to save goals. Please try again.');
         }
     };
 
     return (
-    <React.Fragment>
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>
             <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
                 Update Goals
-            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={handleClose}></Button>
+            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={handleClose} />
             </Stack>
         </DialogTitle>
 
         <DialogContent>
             <Button onClick={handleAddGoal} variant="outlined">Add</Button>
+            {formError ? <Alert severity="error" sx={{ mt: 2 }}>{formError}</Alert> : null}
             <br />
             <br />
             <Box>
@@ -117,30 +132,33 @@ export function AccountGoalForm({open, setOpen}: AccountGoalFormProps): React.JS
                         </TableHead>
 
                         <TableBody>
-                        {goals.map((row, index) => {
-                            return (
-                            <TableRow>
+                        {goals.map((row, index) => (
+                            <TableRow key={row.id}>
                                 <TableCell>
                                     <TextField
                                         select
-                                        id={`task-${row.id}`}
+                                        id={`task-${String(row.id)}`}
                                         variant='standard'
-                                        value={goalsAvailable[row.task].name}
+                                        value={row.task}
                                         onChange={(e) => {
-                                            const newGoals = [...goals];
-                                            newGoals[index].task = goalsAvailable.findIndex((g) => g.name === e.target.value);
+                                            let newGoals = [...goals];
+                                            newGoals.map(goal => {
+                                                if (goal.id === row.id) {
+                                                    goal.task = Number(e.target.value);
+                                                }
+                                                return goal
+                                            })
                                             setGoals(newGoals);
                                         }}
                                     >
                                         {goalsAvailable.map((goal) => {
-                                            const taskIndex = goalsAvailable.findIndex((g) => g.name === goal.name);
                                             const isSelectedElsewhere = goals.some((selectedGoal, selectedIndex) =>
-                                                selectedIndex !== index && selectedGoal.task === taskIndex
+                                                selectedIndex !== row.id && selectedGoal.task === goal.id
                                             );
                                             return (
                                                 <MenuItem
                                                     key={goal.id}
-                                                    value={goal.name}
+                                                    value={goal.id}
                                                     disabled={isSelectedElsewhere}
                                                 >
                                                     {goal.name}
@@ -154,7 +172,7 @@ export function AccountGoalForm({open, setOpen}: AccountGoalFormProps): React.JS
                                     <TextField
                                         error={row.target <= 0 || row.target > 100}
                                         helperText={row.target <= 0 ? 'Must be greater than 0' : row.target > 100 ? 'Must be less than or equal to 100' : ''}
-                                        id={`target-${row.id}`}
+                                        id={`target-${String(row.id)}`}
                                         variant='standard'
                                         type="number"
                                         value={row.target}
@@ -166,13 +184,12 @@ export function AccountGoalForm({open, setOpen}: AccountGoalFormProps): React.JS
                                     />
                                 </TableCell>
                                 <TableCell align="center">
-                                    <Button onClick={() => handleRemoveGoal(row.id)} color="error">
+                                    <Button onClick={() => {handleRemoveGoal(row.id)}} color="error">
                                         Remove
                                     </Button>
                                 </TableCell>
                             </TableRow>
-                            );
-                        })}
+                        ))}
                         </TableBody>
                     </Table>
                     </TableContainer>
@@ -185,6 +202,5 @@ export function AccountGoalForm({open, setOpen}: AccountGoalFormProps): React.JS
           <Button onClick={handleSubmit} variant="contained">Save Goals</Button>
         </DialogActions>
       </Dialog>
-    </React.Fragment>
   );
 }
