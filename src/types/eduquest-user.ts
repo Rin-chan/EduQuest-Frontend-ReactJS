@@ -40,6 +40,7 @@ export interface DailyCheckInResult {
   current_streak: number;
   longest_streak: number;
   total_points: number;
+  current_points: number;
 }
 
 export interface CalendarDailyCheckInResult {

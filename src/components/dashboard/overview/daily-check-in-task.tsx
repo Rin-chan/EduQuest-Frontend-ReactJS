@@ -15,10 +15,9 @@ import type { EduquestUser } from '@/types/eduquest-user';
 
 interface DailyCheckInTaskProps {
   eduquestUser: EduquestUser;
-  onCheckedIn?: () => Promise<void>;
 }
 
-export function DailyCheckInTask({ eduquestUser, onCheckedIn }: DailyCheckInTaskProps): React.JSX.Element {
+export function DailyCheckInTask({ eduquestUser }: DailyCheckInTaskProps): React.JSX.Element {
   return (
     <Card sx={{ height: '100%' }}>
       <CardHeader
@@ -44,8 +43,8 @@ export function DailyCheckInTask({ eduquestUser, onCheckedIn }: DailyCheckInTask
                 secondary={`Streak: ${String(eduquestUser.daily_checkin_streak)} day(s)`}
               />
               <Chip
-                label={'Done'}
-                color={'success'}
+                label='Done'
+                color='success'
                 size="small"
               />
             </Stack>
