@@ -88,7 +88,7 @@ export default function Page(): React.JSX.Element {
                                     <Stack direction="row" justifyContent="space-between">
                                         <Typography variant="body1">{goalsAvailable[goalsAvailable.findIndex((g) => g.id === goal.task)].name}</Typography>
 
-                                        <Typography variant="body1">{goal.complete}/{goal.target}</Typography>
+                                        <Typography variant="body1">{Math.floor(goal.complete)}/{goal.target}</Typography>
                                     </Stack>
                                 </Grid>
                             ))
