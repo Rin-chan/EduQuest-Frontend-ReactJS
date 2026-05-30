@@ -34,7 +34,7 @@ import { DailyCheckInTask } from "@/components/dashboard/overview/daily-check-in
 
 
 export default function Page(): React.JSX.Element {
-  const { eduquestUser, checkSession } = useUser();
+  const { eduquestUser } = useUser();
   const [userCourseProgression, setUserCourseProgression] = React.useState<UserCourseProgression | null>(null);
   const [analyticsPartOneLoading, setAnalyticsPartOneLoading] = React.useState(true);
   const [analyticsPartTwoLoading, setAnalyticsPartTwoLoading] = React.useState(true);
@@ -192,11 +192,6 @@ export default function Page(): React.JSX.Element {
           {eduquestUser ? (
             <DailyCheckInTask
               eduquestUser={eduquestUser}
-              onCheckedIn={async () => {
-                if (checkSession) {
-                  await checkSession();
-                }
-              }}
             />
           ) : null}
         </Grid>

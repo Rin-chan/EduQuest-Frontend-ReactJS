@@ -36,6 +36,7 @@ import { getQuestBonusGame } from "@/api/services/quest";
 import type { BonusGame } from "@/types/bonus-game";
 import { CaretUp as CaretUpIcon } from "@phosphor-icons/react/dist/ssr/CaretUp";
 import { CaretDown as CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
+import { updateDailyGoals } from '@/api/services/eduquest-user';
 
 
 interface AnswerAttemptCardProps {
@@ -77,7 +78,7 @@ const parseKaTeX = (text: string): React.ReactNode[] => {
   });
 };
 
-export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, submitted, bonusAwarded: initialBonusAwarded, onHintUsed, onAnswerSubmit, onAnswerSave, isPrivateQuest, questId }: AnswerAttemptCardProps): React.JSX.Element {
+export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, submitted, bonusAwarded: initialBonusAwarded, onHintUsed, onAnswerSubmit: onAnswerSubmit, onAnswerSave, isPrivateQuest, questId }: AnswerAttemptCardProps): React.JSX.Element {
   const { checkSession, eduquestUser } = useUser();
   const [page, setPage] = React.useState(1);
   const [showExplanation, setShowExplanation] = React.useState<Record<number, boolean>>({});
@@ -218,14 +219,17 @@ export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, su
         };
         await updateUserQuestAttempt(userQuestAttemptId, updatedUserQuestAttempt);
 
-        // 5. Update local state with calculated scores
+        // 5. Update User Daily Goals if they have any goals related to quests
+        await updateUserDailyGoals();
+
+        // 6. Update local state with calculated scores
         setStatus({ type: 'success', message: 'Submit Successful! Redirecting to Quest page...' });
         logger.debug('Submit action completed successfully.');
 
-        // 6. Optionally, refresh user session or data here
+        // 7. Optionally, refresh user session or data here
         await refreshUser();
 
-        // 7. Redirect to Quest page after submission
+        // 8. Redirect to Quest page after submission
         onAnswerSubmit(userQuestAttemptId);
       } catch (error) {
         setStatus({ type: 'error', message: 'Submit Failed. Please try again.' });
@@ -372,6 +376,20 @@ export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, su
         ? ((error.response?.data as { error?: string } | undefined)?.error || null)
         : null;
       setBonusStatus({ type: 'error', message: apiMessage || 'Failed to award bonus points. Please try again.' });
+    }
+  };
+
+  const updateUserDailyGoals = async (): Promise<void> => {
+    if(isPrivateQuest && eduquestUser) {
+      let dailyGoals = eduquestUser.daily_goals;
+      dailyGoals.forEach((goals) => {
+        // 1 is the constant for GoalsAvailable
+        if(goals.task === 1) {
+          goals.complete += 1;
+        }
+      });
+      
+      await updateDailyGoals(dailyGoals);
     }
   };
 

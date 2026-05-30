@@ -7,6 +7,7 @@ export const paths = {
   dashboard: {
     overview: '/dashboard',
     account: '/dashboard/account',
+    goals: '/dashboard/account/goals',
     // customers: '/dashboard/customers',
     user: '/dashboard/eduquest-user',
     // integrations: '/dashboard/integrations',
