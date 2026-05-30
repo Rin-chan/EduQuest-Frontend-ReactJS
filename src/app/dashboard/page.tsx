@@ -30,12 +30,11 @@ import type { AnalyticsPartTwo, UserCourseProgression } from "@/types/analytics/
 import type { AnalyticsPartOne } from "@/types/analytics/analytics-one";
 import {getAnalyticsPartOne, getAnalyticsPartThree, getAnalyticsPartTwo} from "@/api/services/analytics";
 import { DailyCheckInTask } from "@/components/dashboard/overview/daily-check-in-task";
-import { dailyCheckIn } from '@/api/services/eduquest-user';
 
 
 
 export default function Page(): React.JSX.Element {
-  const { eduquestUser, checkSession } = useUser();
+  const { eduquestUser } = useUser();
   const [userCourseProgression, setUserCourseProgression] = React.useState<UserCourseProgression | null>(null);
   const [analyticsPartOneLoading, setAnalyticsPartOneLoading] = React.useState(true);
   const [analyticsPartTwoLoading, setAnalyticsPartTwoLoading] = React.useState(true);
@@ -130,25 +129,6 @@ export default function Page(): React.JSX.Element {
   //   logger.debug('Analytics Part Three', analyticsPartThree);
   // }, [analyticsPartThree]);
 
-  React.useEffect(() => {
-    if (eduquestUser) {
-      try {
-        const fetchCheckInStatus = async (): Promise<void> => {
-          await dailyCheckIn();
-        };
-
-        fetchCheckInStatus().catch((error: unknown) => {
-          logger.error('Failed to fetch daily check-in status', error);
-        });
-
-        const intervalId = setInterval(fetchCheckInStatus, 300000); // Fetch data every 5 minutes
-
-        return () => { clearInterval(intervalId); }; // Clear interval on component unmount
-      } catch (error: unknown) {
-        logger.error('Daily check-in failed', error);
-      };
-  }}, [eduquestUser]);
-
   return (
     <Stack>
       <Stack direction='row' spacing={3} pb={3} alignItems="center">
@@ -212,11 +192,6 @@ export default function Page(): React.JSX.Element {
           {eduquestUser ? (
             <DailyCheckInTask
               eduquestUser={eduquestUser}
-              onCheckedIn={async () => {
-                if (checkSession) {
-                  await checkSession();
-                }
-              }}
             />
           ) : null}
         </Grid>

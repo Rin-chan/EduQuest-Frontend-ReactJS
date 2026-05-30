@@ -17,6 +17,7 @@ import {MobileNav} from './mobile-nav';
 import {UserPopover} from './user-popover';
 import { LinearProgressForLevel, } from "@/components/dashboard/misc/linear-progress-with-label";
 import {User as UserIcon} from "@phosphor-icons/react/dist/ssr/User";
+import { dailyCheckIn } from '@/api/services/eduquest-user';
 
 export function MainNav(): React.JSX.Element {
   const [openNav, setOpenNav] = React.useState<boolean>(false);
@@ -82,6 +83,26 @@ export function MainNav(): React.JSX.Element {
     });
   }, [setUserPhotoAvatar])
 
+  React.useEffect(() => {
+    if (eduquestUser) {
+      try {
+        const fetchCheckInStatus = async (): Promise<void> => {
+          await dailyCheckIn();
+        };
+
+        fetchCheckInStatus().catch((error: unknown) => {
+          logger.error('Failed to fetch daily check-in status', error);
+        });
+
+        const intervalId = setInterval(fetchCheckInStatus, 300000); // Fetch data every 5 minutes
+
+        return () => { clearInterval(intervalId); }; // Clear interval on component unmount
+      } catch (error: unknown) {
+        logger.error('Daily check-in failed', error);
+      }
+    }
+  }, [eduquestUser]);
+
   return (
     <React.Fragment>
       <Box
@@ -127,7 +148,7 @@ export function MainNav(): React.JSX.Element {
                 sx={{ width: '200px' }}
                 value={eduquestUser.total_points % 100}
                 level={`Level ${(Math.floor(eduquestUser.total_points / 100) + 1).toString()}`}
-                absValue={eduquestUser.total_points}
+                absValue={eduquestUser.current_points}
               />
               : null}
 
