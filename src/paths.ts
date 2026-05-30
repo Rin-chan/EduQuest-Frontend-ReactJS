@@ -2,10 +2,12 @@ export const paths = {
   home: '/',
   auth: {
     signIn: '/auth/sign-in',
+    demoSignIn: '/auth/demo-sign-in',
   },
   dashboard: {
     overview: '/dashboard',
     account: '/dashboard/account',
+    goals: '/dashboard/account/goals',
     // customers: '/dashboard/customers',
     user: '/dashboard/eduquest-user',
     // integrations: '/dashboard/integrations',
