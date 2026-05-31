@@ -38,7 +38,7 @@ export default function Page(): React.JSX.Element {
                     /* Ignore calendar load errors in this view */
                 });
         }
-    }, []);
+    }, [eduquestUser]);
 
     const dateAlreadyClicked = (clickedDates: Date[], date: Date): boolean => clickedDates.some(
         d => new Date(d).getTime() === new Date(date).getTime()

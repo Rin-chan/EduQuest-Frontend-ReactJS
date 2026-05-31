@@ -6,7 +6,8 @@ const BadgeList = {
     "badge1": "/assets/first_attempt_badge.svg",
     "badge2": "/assets/full_attendance_badge.svg",
 }
-type DragItem = {
+
+interface DragItem {
   index: number;
 };
 
