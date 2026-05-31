@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 import {Button, Stack} from "@mui/material";
 import { StoreEnlarge } from './store-enlarge';
-import { Cosmetic } from '@/types/cosmetic';
+import { Cosmetic, CosmeticType } from '@/types/cosmetic';
 import { useUser } from '@/hooks/use-user';
 
 interface StoreCardProps {
@@ -35,12 +35,22 @@ export function StoreCard({ name, list }: StoreCardProps): React.JSX.Element {
                         {
                         list?.map((cosmeticItem: Cosmetic) => (
                             <Card key={cosmeticItem.id} sx={{ display: 'block', width: '17vw', minheight: '30vw', maxheight: '40vw', marginleft: 2, marginRight: 2, overflow: 'hidden', padding: 1 }}>
-                                <CardMedia
-                                    component="img"
-                                    alt={cosmeticItem.image.name || 'Avatar'}
-                                    src={`/assets/${cosmeticItem.image.filename}`}
-                                    style={{ borderRadius: '50%', width: '100%', height: 'auto' }}
-                                />
+                                {
+                                    name == CosmeticType.Picture || name == CosmeticType.Border ?
+                                    <CardMedia
+                                        component="img"
+                                        alt={cosmeticItem.image.name || 'Profile'}
+                                        src={`/assets/${cosmeticItem.image.filename}`}
+                                        style={{ borderRadius: '50%', width: '100%', height: 'auto' }}
+                                    />
+                                    :
+                                    <CardMedia
+                                        component="img"
+                                        alt={cosmeticItem.image.name || 'Banner'}
+                                        src={`/assets/${cosmeticItem.image.filename}`}
+                                        style={{  width: '100%', height: 'auto' }}
+                                    />
+                                }
                     
                                 <Stack sx={{ alignItems: 'center' }}>
                                     <Typography noWrap textAlign='center' variant="h5" sx={{ width: '14vw' }}>{cosmeticItem.name}</Typography>
