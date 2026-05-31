@@ -59,7 +59,7 @@ export function StoreCard({ name, list }: StoreCardProps): React.JSX.Element {
                                         variant="contained" 
                                         color="primary" sx={{ mt: 1 }} 
                                         onClick={() => { handleBuy(cosmeticItem); }} 
-                                        disabled={cosmetic?.owns?.includes(cosmeticItem.id) ?? false}
+                                        disabled={cosmetic?.owns?.some((owned) => owned.id == cosmeticItem.id) ?? false}
                                         >
                                         Buy
                                     </Button>
