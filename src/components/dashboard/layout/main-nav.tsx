@@ -27,7 +27,7 @@ export function MainNav(): React.JSX.Element {
   const [userAvatarProps, setUserAvatarProps] = React.useState<UserAvatarProps>({
     name: '?',
   });
-  const { eduquestUser, avatar } = useUser();
+  const { eduquestUser, cosmetic } = useUser();
   const { mode, setMode } = useColorScheme();
 
 
@@ -39,10 +39,10 @@ export function MainNav(): React.JSX.Element {
   }
 
   const setUserPhotoAvatar = React.useCallback(async (): Promise<void> => {
-    if (eduquestUser) {
+    if (eduquestUser && cosmetic) {
       try {
-        logger.debug("User Avatar: ", avatar);
-        if (avatar === '') {
+        logger.debug("User Avatar: ", "cosmetic.profile_picture.filename");
+        if (cosmetic.profile_picture.filename === '') {
           setShowUserInitials(true);
           setUserAvatarProps({
             name: formatName(eduquestUser.nickname),
@@ -50,7 +50,7 @@ export function MainNav(): React.JSX.Element {
             textColor: "white",
           });
         } else {
-          setUserPhoto(avatar);
+          setUserPhoto(cosmetic.profile_picture.filename);
           setShowUserInitials(false);
         }
       } catch (error) {
@@ -63,7 +63,15 @@ export function MainNav(): React.JSX.Element {
         logger.error('Error fetching user photo: ', error)
       }
     }
-  }, [avatar, eduquestUser]);
+    else if (eduquestUser) {
+      setShowUserInitials(true);
+      setUserAvatarProps({
+        name: formatName(eduquestUser.nickname),
+        bgColor: 'var(--mui-palette-neutral-900)',
+        textColor: "white",
+      });
+    }
+  }, [cosmetic, eduquestUser]);
 
   // React.useEffect(() => {
   //   const fetchData = async (): Promise<void> => {
