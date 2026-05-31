@@ -32,9 +32,11 @@ import Box from "@mui/material/Box";
 import Badge from '@mui/material/Badge';
 import Checkbox from '@mui/material/Checkbox';
 import {DraggableBadge} from "@/components/dashboard/account/account-drag-and-drop";
+import { colorsAvailable } from '@/constants';
+import { Cosmetic } from '@/types/cosmetic';
 
 export function AccountDetailsForm(): React.JSX.Element {
-  const { eduquestUser, avatar, checkSession } = useUser();
+  const { eduquestUser, cosmetic, checkSession } = useUser();
   const nicknameRef = React.useRef<HTMLInputElement>(null);
   const [userPhoto, setUserPhoto] = React.useState<string | null>(null);
   const [showUserInitials, setShowUserInitials] = React.useState(false);
@@ -42,10 +44,13 @@ export function AccountDetailsForm(): React.JSX.Element {
     name: '?',
   });
   const [submitStatus, setSubmitStatus] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [pictureList, setPictureList] = React.useState<Cosmetic[] | null>(null);
+  const [borderList, setBorderList] = React.useState<Cosmetic[] | null>(null);
+  const [bannerList, setBannerList] = React.useState<Cosmetic[] | null>(null);
   
-  const [file, setFile] = React.useState<File | null>(null);
+  const [file, setFile] = React.useState<File | string | null>(null);
   const [color, setColor] = React.useState<string>('white');
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [borderOption, setBorderOption] = React.useState<number>(-1);
   const [bannerOption, setBannerOption] = React.useState<number>(-1);
   const [badgesSelected, setBadgesSelected] = React.useState<string[]>([]);
@@ -89,11 +94,11 @@ export function AccountDetailsForm(): React.JSX.Element {
     }
   };
 
-  const setUserPhotoAvatar = React.useCallback(async (): Promise<void> => {
-    if (eduquestUser) {
+  const setUserData = React.useCallback(async (): Promise<void> => {
+    if (eduquestUser && cosmetic) {
       try {
-        logger.debug("User Avatar: ", avatar);
-        if (avatar === '') {
+        logger.debug("User Avatar: ", cosmetic.profile_picture.filename);
+        if (cosmetic.profile_picture.filename === '') {
           setShowUserInitials(true);
           setUserAvatarProps({
             name: formatName(eduquestUser.nickname),
@@ -101,8 +106,16 @@ export function AccountDetailsForm(): React.JSX.Element {
             textColor: "white",
           });
         } else {
-          setUserPhoto(avatar);
+          setUserPhoto(cosmetic.profile_picture.filename);
+          setFile(cosmetic.profile_picture.filename);
           setShowUserInitials(false);
+        }
+
+        if (cosmetic.profile_background != '') {
+          setColor(cosmetic.profile_background);
+        }
+        else {
+          setColor('white');
         }
       } catch (error) {
         setShowUserInitials(true);
@@ -114,18 +127,27 @@ export function AccountDetailsForm(): React.JSX.Element {
         logger.error('Error fetching user photo: ', error)
       }
     }
-  }, [avatar, eduquestUser]);
+    else if (eduquestUser) {
+      setShowUserInitials(true);
+      setUserAvatarProps({
+        name: formatName(eduquestUser.nickname),
+        bgColor: 'var(--mui-palette-neutral-900)',
+        textColor: "white",
+      });
+      setColor('white');
+    }
+  }, [cosmetic, eduquestUser]);
 
   React.useEffect(() => {
     const fetchData = async (): Promise<void> => {
-      await setUserPhotoAvatar();
+      await setUserData();
     }
     fetchData().catch((error: unknown) => {
       logger.error('Failed to fetch data', error);
     });
-  }, [eduquestUser, setUserPhotoAvatar]);
+  }, [eduquestUser, setUserData]);
 
-  const openAvatarEditChange = (event): void => {
+  const openAvatarEditChange = (event: React.MouseEvent<HTMLElement>): void => {
     setAnchorEl(event.currentTarget);
     setOpenAvatarEdit(true);
   }
@@ -140,27 +162,28 @@ export function AccountDetailsForm(): React.JSX.Element {
     closeAvatarEditChange();
   }
 
-  const closeAvatarChange = async (): Promise<void> => {
+  const closeAvatarChange = (): void => {
     setOpenAvatar(false);
     setFile(null);
     setColor('white');
   }
 
-  const submitAvatarChange = async (): Promise<void> => {
+  const submitAvatarChange = (): void => {
     // Save the avatar change (file or color) to the server here
     closeAvatarChange();
   }
 
-  const openBackgroundChange = (event) => {
+  const openBackgroundChange = (event: React.MouseEvent<HTMLElement>): void => {
     setAnchorEl(event.currentTarget);
     setOpenBackground(true);
   }
   const closeBackgroundChange = async (): Promise<void> => {
     setOpenBackground(false);
     setAnchorEl(null);
+    await refreshUser();
   }
 
-  const submitBackgroundChange = async (): Promise<void> => {
+  const submitBackgroundChange = (): void => {
     // Save the background change (file) to the server here
     closeBackgroundChange();
   }
@@ -169,11 +192,11 @@ export function AccountDetailsForm(): React.JSX.Element {
     setOpenBorder(true);
     setOpenAvatarEdit(false);
   }
-  const closeBorderChange = async (): Promise<void> => {
+  const closeBorderChange = (): void => {
     setOpenBorder(false);
   }
 
-  const submitBorderChange = async (): Promise<void> => {
+  const submitBorderChange = (): void => {
     // Save the border change (color) to the server here
     closeBorderChange();
     setBorderOption(-1);
@@ -182,11 +205,11 @@ export function AccountDetailsForm(): React.JSX.Element {
   const openBannerChange = (): void => {
     setOpenBanner(true);
   }
-  const closeBannerChange = async (): Promise<void> => {
+  const closeBannerChange = (): void => {
     setOpenBanner(false);
   }
 
-  const submitBannerChange = async (): Promise<void> => {
+  const submitBannerChange = (): void => {
     // Save the banner change (color) to the server here
     closeBannerChange();
     setBannerOption(-1);
@@ -195,17 +218,17 @@ export function AccountDetailsForm(): React.JSX.Element {
   const openBadgesChange = (): void => {
     setOpenBadges(true);
   }
-  const closeBadgesChange = async (): Promise<void> => {
+  const closeBadgesChange = (): void => {
     setOpenBadges(false);
     setBadgesSelected([]);
   }
 
-  const submitBadgesChange = async (): Promise<void> => {
+  const submitBadgesChange = (): void => {
     // Save the badges change (color) to the server here
     closeBadgesChange();
   }
 
-  function moveBadge(dragIndex: number, hoverIndex: number) {
+  function moveBadge(dragIndex: number, hoverIndex: number): void {
     setBadgesSelected((prev) => {
       const updated = [...prev];
 
@@ -221,7 +244,7 @@ export function AccountDetailsForm(): React.JSX.Element {
   return (
     <form onSubmit={handleSubmit}>
       <Card>
-        <CardContent style={{backgroundImage: 'linear-gradient(to right, white, yellow, white)'}}>
+        <CardContent style={{backgroundImage: `linear-gradient(to right, white, ${color}, white)`}}>
           <Grid container spacing={3}>
             <Grid sm={6} xs={12}>
               <Grid style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', marginBottom: '64px' }}>
@@ -319,7 +342,7 @@ export function AccountDetailsForm(): React.JSX.Element {
               <Grid sm={6} xs={12}>
                 <Typography variant="overline" color="text.secondary">Total points</Typography>
                 <Stack direction="row" spacing='6px' sx={{ alignItems: 'center' }}>
-                  <Typography variant="body2">{eduquestUser.total_points}</Typography>
+                  <Typography variant="body2">{Math.round(eduquestUser.current_points * 100) / 100}</Typography>
                   <Points height={18}/>
                 </Stack>
               </Grid>
@@ -395,7 +418,7 @@ export function AccountDetailsForm(): React.JSX.Element {
         <DialogTitle>
             <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
             Change Avatar
-            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={closeAvatarChange}></Button>
+            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={closeAvatarChange} />
             </Stack>
         </DialogTitle>
         <DialogContent>
@@ -433,26 +456,48 @@ export function AccountDetailsForm(): React.JSX.Element {
               <Typography variant="body1">Choose Preset</Typography>
 
               <Grid direction="row" container>
-                <Grid sm={3} xs={6}>
-                  <IconButton onClick={() => setColor('red')}>
-                    <Avatar sx={{ bgcolor: 'red' }} />
+                <Grid sm={4} xs={8}>
+	                  <IconButton onClick={() => { setFile(null); }}>
+                    <UserAvatar {...userAvatarProps}/>
                   </IconButton>
                 </Grid>
 
-                <Grid sm={3} xs={6}>
-                  <IconButton onClick={() => setColor('blue')}>
+                {
+                  userPhoto ?
+                  <Grid sm={4} xs={8}>
+                      <IconButton onClick={() => { setFile(userPhoto); }}>
+                      <Avatar
+                        src={userPhoto}
+                        sx={{width: 48, height: 48}}
+                      />
+                    </IconButton>
+                  </Grid>
+                  : null
+                }
+
+                {
+                  pictureList?.map((item: Cosmetic) => (
+                    <Grid sm={4} xs={8}>
+                        <IconButton onClick={() => { setColor('blue'); }}>
+                        <Avatar sx={{ bgcolor: 'blue' }} />
+                      </IconButton>
+                    </Grid>
+                  ))
+                }
+                <Grid sm={4} xs={8}>
+	                  <IconButton onClick={() => { setColor('blue'); }}>
                     <Avatar sx={{ bgcolor: 'blue' }} />
                   </IconButton>
                 </Grid>
 
-                <Grid sm={3} xs={6}>
-                  <IconButton onClick={() => setColor('yellow')}>
+                <Grid sm={4} xs={8}>
+	                  <IconButton onClick={() => { setColor('yellow'); }}>
                     <Avatar sx={{ bgcolor: 'yellow' }} />
                   </IconButton>
                 </Grid>
 
-                <Grid sm={3} xs={6}>
-                  <IconButton onClick={() => setColor('green')}>
+                <Grid sm={4} xs={8}>
+	                  <IconButton onClick={() => { setColor('green'); }}>
                     <Avatar sx={{ bgcolor: 'green' }} />
                   </IconButton>
                 </Grid>
@@ -479,29 +524,15 @@ export function AccountDetailsForm(): React.JSX.Element {
           <Card>
             <CardContent>
               <Grid direction="row" container>
-                <Grid sm={3} xs={6}>
-                  <IconButton onClick={() => setColor('red')}>
-                    <CircleIcon htmlColor="red" fontSize="large" />
-                  </IconButton>
-                </Grid>
-
-                <Grid sm={3} xs={6}>
-                  <IconButton onClick={() => setColor('blue')}>
-                    <CircleIcon htmlColor="blue" fontSize="large" />
-                  </IconButton>
-                </Grid>
-
-                <Grid sm={3} xs={6}>
-                  <IconButton onClick={() => setColor('yellow')}>
-                    <CircleIcon htmlColor="yellow" fontSize="large" />
-                  </IconButton>
-                </Grid>
-
-                <Grid sm={3} xs={6}>
-                  <IconButton onClick={() => setColor('green')}>
-                    <CircleIcon htmlColor="green" fontSize="large" />
-                  </IconButton>
-                </Grid>
+                {
+                  colorsAvailable.map((colorOption: string) => (
+                    <Grid xs={2}>
+                        <IconButton onClick={() => { setColor(colorOption); }}>
+                        <CircleIcon htmlColor={colorOption} fontSize="large" />
+                      </IconButton>
+                    </Grid>
+                  ))
+                }
               </Grid>
               
               <Stack direction="row" sx={{ justifyContent: 'flex-end', marginTop: 2 }}>
@@ -515,7 +546,7 @@ export function AccountDetailsForm(): React.JSX.Element {
         <DialogTitle>
             <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
             Change Border
-            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={closeBorderChange}></Button>
+            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={closeBorderChange} />
             </Stack>
         </DialogTitle>
         <DialogContent>
@@ -562,8 +593,41 @@ export function AccountDetailsForm(): React.JSX.Element {
               <Typography variant="body1">Choose Border</Typography>
 
               <Grid direction="row" container spacing={3}>
+                {
+                  borderList?.map((item: Cosmetic) => (
+                    <Grid sm={6} xs={12}>
+                      <IconButton onClick={() => { setBorderOption(1); }}>
+                        <Box
+                          sx={{
+                            position: 'relative',
+                            width: 64,
+                            height: 64,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                          >
+                          <Box
+                            component="img"
+                            src="https://png.pngtree.com/png-vector/20250724/ourmid/pngtree-elegant-gold-circle-frame-png-image_16679818.webp"
+                            sx={{
+                              position: 'absolute',
+                              width: 64,
+                              height: 64,
+                              top: 0,
+                              left: 0,
+                              pointerEvents: 'none',
+                            }}
+                          />
+                          <Avatar sx={{width: 48, height: 48}}/>
+                        </Box>
+                      </IconButton>
+                    </Grid>
+                  ))
+                }
+
                 <Grid sm={6} xs={12}>
-                  <IconButton onClick={() => setBorderOption(1)}>
+	                  <IconButton onClick={() => { setBorderOption(1); }}>
                     <Box
                       sx={{
                         position: 'relative',
@@ -592,7 +656,7 @@ export function AccountDetailsForm(): React.JSX.Element {
                 </Grid>
 
                 <Grid sm={6} xs={12}>
-                  <IconButton onClick={() => setBorderOption(2)}>
+	                  <IconButton onClick={() => { setBorderOption(2); }}>
                     <Box
                       sx={{
                         position: 'relative',
@@ -634,7 +698,7 @@ export function AccountDetailsForm(): React.JSX.Element {
         <DialogTitle>
             <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
             Change Banner
-            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={closeBannerChange}></Button>
+            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={closeBannerChange} />
             </Stack>
         </DialogTitle>
         <DialogContent>
@@ -657,8 +721,8 @@ export function AccountDetailsForm(): React.JSX.Element {
                       <Stack direction="row" sx={{padding: 2}}>
                           <Box>
                               <Avatar
-                                  src={`/assets/avatar-1.png`}
-                                  alt={`Avatar of user 1`}
+                                  src="/assets/avatar-1.png"
+                                  alt="Avatar of user 1"
                                   sx={{ 
                                     width: 64, 
                                     height: 64,
@@ -669,10 +733,11 @@ export function AccountDetailsForm(): React.JSX.Element {
                           <Stack direction="column" spacing={0} sx={{display: 'flex', paddingLeft: 3, justifyContent: 'center'}}>
                               <Typography variant="h4">Name</Typography>
                               <Stack direction="row" spacing={1} sx={{display: 'flex', alignItems: 'center'}}>
-                                  <img
-                                      width={25}
-                                      height={25}
-                                  />
+	                                  <img
+                                          alt=""
+	                                      width={25}
+	                                      height={25}
+	                                  />
                               </Stack>
                           </Stack>
                       </Stack>
@@ -687,9 +752,9 @@ export function AccountDetailsForm(): React.JSX.Element {
 
               <Grid direction="row" container spacing={2}>
                 <Grid>
-                  <Button onClick={() => setBannerOption(1)}>
-                    <Grid 
-                      direction="row"
+	                  <Button onClick={() => { setBannerOption(1); }}>
+	                    <Grid 
+	                      direction="row"
                       sx={{
                         backgroundImage: '', 
                         backgroundSize: 'cover', 
@@ -698,15 +763,14 @@ export function AccountDetailsForm(): React.JSX.Element {
                         minWidth: '10em',
                         border: '1px solid black'
                       }}
-                      >
-                    </Grid>
+	                      />
                   </Button>
                 </Grid>
 
                 <Grid>
-                  <Button onClick={() => setBannerOption(2)}>
-                    <Grid 
-                      direction="row" 
+	                  <Button onClick={() => { setBannerOption(2); }}>
+	                    <Grid 
+	                      direction="row" 
                       sx={{
                         backgroundImage: 'url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQic0vjbZ9kDfF0KQMCQso5MSaWTypoMte02w&s)', 
                         backgroundSize: 'cover', 
@@ -715,8 +779,7 @@ export function AccountDetailsForm(): React.JSX.Element {
                         minWidth: '10em',
                         border: '1px solid black'
                       }}
-                      >
-                    </Grid>
+	                      />
                   </Button>
                 </Grid>
               </Grid>
@@ -733,7 +796,7 @@ export function AccountDetailsForm(): React.JSX.Element {
         <DialogTitle>
             <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
             Change Badges
-            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={closeBadgesChange}></Button>
+            <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={closeBadgesChange} />
             </Stack>
         </DialogTitle>
         <DialogContent>
@@ -742,7 +805,7 @@ export function AccountDetailsForm(): React.JSX.Element {
                 <div>
                   {badgesSelected.map((badge, index) => (
                     <DraggableBadge
-                      key={`${badge}-${index}`}
+	                      key={`${badge}-${String(index)}`}
                       badge={badge}
                       index={index}
                       moveBadge={moveBadge}
