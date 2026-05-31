@@ -1,50 +1,66 @@
 "use client"
 
-import * as React from 'react';
+import { useEffect, useState } from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
+import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 import {Button, Stack} from "@mui/material";
 import { StoreEnlarge } from './store-enlarge';
+import { Cosmetic } from '@/types/cosmetic';
+import { useUser } from '@/hooks/use-user';
 
 interface StoreCardProps {
   name: string;
-  type: number;
-  sorting?: number;
+  list: Cosmetic[] | null;
 }
 
-export function StoreCard({ name, type, sorting }: StoreCardProps): React.JSX.Element {
-    const [buyOpen, setBuyOpen] = React.useState(false);
-    const [buyID, setBuyID] = React.useState(-1);
+export function StoreCard({ name, list }: StoreCardProps): React.JSX.Element {
+    const { cosmetic } = useUser();
+    const [buyOpen, setBuyOpen] = useState(false);
+    const [buyCosmetic, setBuyCosmetic] = useState<Cosmetic | null>(null);
 
-    const handleBuy = (id: number): void => {
+    const handleBuy = (cosmeticItem: Cosmetic): void => {
         setBuyOpen(true);
-        setBuyID(id);
+        setBuyCosmetic(cosmeticItem);
     }
 
     return (
-    <Stack spacing={1}>
-        <Typography variant="h4">{name}</Typography>
-        <Card>
-          <CardContent sx={{pb: '16px'}}>
-            <Card sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 2, maxWidth: '15vw'}}>
-                <img
-                    src={`/assets/avatar-1.png`}
-                    style={{ borderRadius: '50%', width: '100%', height: 'auto' }}
-                />
+        <Stack spacing={1}>
+            <Typography variant="h4">{name}</Typography>
 
-                <Stack sx={{ paddingTop: 2, alignItems: 'center' }}>
-                    <Typography variant="h5">Man</Typography>
-                    <Typography variant="body1">5 stars</Typography>
-                    <Button variant="contained" color="neon" sx={{ mt: 1 }} onClick={() => handleBuy(1)}>
-                        Buy
-                    </Button>
-                </Stack>
+            <Card>
+                <CardContent sx={{ pb: '16px', display: 'flex', flexWrap: 'wrap', justifyContent: 'left', overflowX: 'scroll' }}>
+                    <Stack direction="row">
+                        {
+                        list?.map((cosmeticItem: Cosmetic) => (
+                            <Card key={cosmeticItem.id} sx={{ display: 'block', width: '17vw', minheight: '30vw', maxheight: '40vw', marginleft: 2, marginRight: 2, overflow: 'hidden', padding: 1 }}>
+                                <CardMedia
+                                    component="img"
+                                    alt={cosmeticItem.image.name || 'Avatar'}
+                                    src={`/assets/${cosmeticItem.image.filename}`}
+                                    style={{ borderRadius: '50%', width: '100%', height: 'auto' }}
+                                />
+                    
+                                <Stack sx={{ alignItems: 'center' }}>
+                                    <Typography noWrap textAlign='center' variant="h5" sx={{ width: '14vw' }}>{cosmeticItem.name}</Typography>
+                                    <Typography variant="body1">{cosmeticItem.cost} points</Typography>
+                                    <Button 
+                                        variant="contained" 
+                                        color="primary" sx={{ mt: 1 }} 
+                                        onClick={() => { handleBuy(cosmeticItem); }} 
+                                        disabled={cosmetic?.owns?.includes(cosmeticItem.id) ?? false}
+                                        >
+                                        Buy
+                                    </Button>
+                                </Stack>
+                            </Card>
+                        ))}
+                    </Stack>
+                </CardContent>
             </Card>
-          </CardContent>
-        </Card>
 
-        <StoreEnlarge id={buyID} open={buyOpen} setOpen={setBuyOpen} />
-    </Stack>
-  );
+            <StoreEnlarge cosmetic={buyCosmetic} open={buyOpen} setOpen={setBuyOpen} />
+        </Stack>
+    );
 }
