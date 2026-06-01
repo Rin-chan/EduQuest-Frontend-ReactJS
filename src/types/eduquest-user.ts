@@ -52,10 +52,10 @@ export interface CalendarDailyCheckInResult {
 }
 
 export interface EduquestUserCosmeticResult {
-  profile_picture: Image;
+  profile_picture: Cosmetic;
   profile_background: string;
-  profile_border: Image;
-  banner: Image | null;
+  profile_border: Cosmetic;
+  banner: Cosmetic;
   displayed_badges: Badge[];
   about_me: string;
   owns: Cosmetic[];
