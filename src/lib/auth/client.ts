@@ -123,33 +123,25 @@ class AuthClient {
     const demoAuth = getStoredDemoAuth();
     if (demoAuth) {
       const emptyImage: Image = {
-        id: 1,
+        id: -1,
         name: "",
         filename: ""
       }
-      const emptyBadge: Badge = {
-        image: emptyImage,
-        id: 1,
-        name: "",
-        description: "",
-        type: "",
-        condition: ""
-      }
       const emptyCosmetic: Cosmetic = {
-        id: 1,
+        id: -1,
         name: '',
         type: CosmeticType.Picture,
         image: emptyImage,
         cost: 0
       }
       const demoCosmetic: EduquestUserCosmeticResult = {
-          profile_picture: emptyImage,
+          profile_picture: emptyCosmetic,
           profile_background: "",
-          profile_border: emptyImage,
-          banner: emptyImage,
-          displayed_badges: [emptyBadge],
+          profile_border: emptyCosmetic,
+          banner: emptyCosmetic,
+          displayed_badges: [],
           about_me: "",
-          owns: [emptyCosmetic]
+          owns: []
       }
       return {
         data: {
