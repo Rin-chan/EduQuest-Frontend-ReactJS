@@ -10,7 +10,7 @@ import Stack from "@mui/material/Stack";
 import { X } from "@phosphor-icons/react";
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography/Typography';
-import { Cosmetic } from '@/types/cosmetic';
+import { Cosmetic, CosmeticType } from '@/types/cosmetic';
 import { useUser } from '@/hooks/use-user';
 import { useState, useEffect } from 'react';
 import { buyCosmeticId } from '@/api/services/cosmetic';
@@ -62,11 +62,22 @@ export function StoreEnlarge({cosmetic, open, setOpen}: StoreEnlargeProps): Reac
 
                     <DialogContent>
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 2, minWidth: '60vw' }}>
-                            <img
-                                alt="Store item preview"
-                                src={`/assets/${cosmetic.image.filename}`}
-                                style={{ borderRadius: '50%', width: '100%', height: 'auto' }}
-                            />
+                            {
+                                cosmetic.type == CosmeticType.Picture ?
+                                <Box
+                                    component="img"
+                                    alt="Store item preview"
+                                    src={`/assets/${cosmetic.image.filename}`}
+                                    sx={{ borderRadius: '50%', width: '100%', height: 'auto' }}
+                                />
+                                :
+                                <Box
+                                    component="img"
+                                    alt="Store item preview"
+                                    src={`/assets/${cosmetic.image.filename}`}
+                                    sx={{ width: '100%', height: 'auto' }}
+                                />
+                            }
                             <Typography variant="body1" sx={{paddingTop: 2}}>
                                 {cosmetic.cost} stars
                             </Typography>

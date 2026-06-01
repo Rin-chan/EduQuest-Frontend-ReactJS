@@ -36,17 +36,17 @@ export function StoreCard({ name, list }: StoreCardProps): React.JSX.Element {
                         list?.map((cosmeticItem: Cosmetic) => (
                             <Card key={cosmeticItem.id} sx={{ display: 'block', width: '17vw', minheight: '30vw', maxheight: '40vw', marginleft: 2, marginRight: 2, overflow: 'hidden', padding: 1 }}>
                                 {
-                                    name == CosmeticType.Picture || name == CosmeticType.Border ?
+                                    name == CosmeticType.Picture ?
                                     <CardMedia
                                         component="img"
-                                        alt={cosmeticItem.image.name || 'Profile'}
+                                        alt="Store item preview"
                                         src={`/assets/${cosmeticItem.image.filename}`}
                                         style={{ borderRadius: '50%', width: '100%', height: 'auto' }}
                                     />
                                     :
                                     <CardMedia
                                         component="img"
-                                        alt={cosmeticItem.image.name || 'Banner'}
+                                        alt="Store item preview"
                                         src={`/assets/${cosmeticItem.image.filename}`}
                                         style={{  width: '100%', height: 'auto' }}
                                     />
