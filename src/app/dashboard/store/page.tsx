@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { StoreCard } from '@/components/dashboard/store/store-card';
@@ -11,7 +11,7 @@ import { getAllCosmetic } from '@/api/services/cosmetic';
 import { Cosmetic, CosmeticType } from '@/types/cosmetic';
 
 export default function Page(): React.JSX.Element {
-  const [sorting, setSorting] = useState<string>("descending");
+  const [sorting, setSorting] = useState<string>('latest');
   const [list, setList] = useState<Cosmetic[] | null>(null);
 
   useEffect(() => {
@@ -19,6 +19,22 @@ export default function Page(): React.JSX.Element {
       setList(response)
     })
   }, [])
+
+  const sortedList = useMemo(() => {
+    if (!list) return null;
+
+    const copy = [...list];
+
+    if (sorting === 'ascending') {
+      return copy.sort((a, b) => a.cost - b.cost);
+    }
+
+    if (sorting === 'descending') {
+      return copy.sort((a, b) => b.cost - a.cost);
+    }
+
+    return copy;
+  }, [list, sorting]);
   
   return (
     <Stack spacing={3}>
@@ -34,18 +50,19 @@ export default function Page(): React.JSX.Element {
             setSorting(e.target.value);
           }}
         >
-          <MenuItem value="ascending">Price: Low to High</MenuItem>
-          <MenuItem value="descending">Price High to Low</MenuItem>
+          <MenuItem value='latest'>Latest</MenuItem>
+          <MenuItem value='ascending'>Price: Low to High</MenuItem>
+          <MenuItem value='descending'>Price: High to Low</MenuItem>
         </TextField>
       </Stack>
 
-      <StoreCard name="Avatar" list={list ? list.filter(function (cosmetic) {
+      <StoreCard name="Picture" list={sortedList ? sortedList.filter(function (cosmetic) {
         return cosmetic.type == CosmeticType.Picture.toString();
       }) : null}/>
-      <StoreCard name="Border" list={list ? list.filter(function (cosmetic) {
+      <StoreCard name="Border" list={sortedList ? sortedList.filter(function (cosmetic) {
         return cosmetic.type == CosmeticType.Border.toString();
       }) : null}/>
-      <StoreCard name="Banner" list={list ? list.filter(function (cosmetic) {
+      <StoreCard name="Banner" list={sortedList ? sortedList.filter(function (cosmetic) {
         return cosmetic.type == CosmeticType.Banner.toString();
       }) : null}/>
     </Stack>
