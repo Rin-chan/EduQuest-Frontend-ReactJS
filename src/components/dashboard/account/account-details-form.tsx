@@ -32,24 +32,67 @@ import Box from "@mui/material/Box";
 import Badge from '@mui/material/Badge';
 import Checkbox from '@mui/material/Checkbox';
 import {DraggableBadge} from "@/components/dashboard/account/account-drag-and-drop";
-import { colorsAvailable } from '@/constants';
-import { Cosmetic } from '@/types/cosmetic';
+import { Image } from '@/types/image';
+import { Cosmetic, CosmeticType } from '@/types/cosmetic';
+import { updateUserCosmetic } from '@/api/services/eduquest-user';
+import { EduquestUserCosmeticResult } from '@/types/eduquest-user';
+import {useTheme} from '@mui/material/styles';
+
+/*
+------------------------------------------
+Color options for user background
+------------------------------------------
+*/
+export const colorsAvailable = [
+    "#ffadad",
+    "#ffd6a5",
+    "#fdffb6",
+    "#caffbf",
+    "#9bf6ff",
+    "#a0c4ff",
+    "#bdb2ff",
+    "#ffc6ff"
+];
+
+const emptyImage: Image = {
+  id: -1,
+  name: "",
+  filename: ""
+}
+
+const emptyCosmetic: Cosmetic = {
+  id: -1,
+  name: "",
+  type: CosmeticType.Picture,
+  image: emptyImage,
+  cost: 0,
+}
+
+const emptyResult: EduquestUserCosmeticResult = {
+    profile_picture: emptyCosmetic,
+    profile_background: "",
+    profile_border: emptyCosmetic,
+    banner: emptyCosmetic,
+    displayed_badges: [],
+    about_me: "",
+    owns: []
+}
 
 export function AccountDetailsForm(): React.JSX.Element {
+  const theme = useTheme();
   const { eduquestUser, cosmetic, checkSession } = useUser();
   const nicknameRef = React.useRef<HTMLInputElement>(null);
   const [userPhoto, setUserPhoto] = React.useState<string | null>(null);
-  const [showUserInitials, setShowUserInitials] = React.useState(false);
+  const [showUserInitials, setShowUserInitials] = React.useState<boolean>(false);
   const [userAvatarProps, setUserAvatarProps] = React.useState<UserAvatarProps>({
     name: '?',
   });
   const [submitStatus, setSubmitStatus] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [pictureList, setPictureList] = React.useState<Cosmetic[] | null>(null);
-  const [borderList, setBorderList] = React.useState<Cosmetic[] | null>(null);
-  const [bannerList, setBannerList] = React.useState<Cosmetic[] | null>(null);
+  const [draftCosmetic, setDraftCosmetic] = React.useState<EduquestUserCosmeticResult>(emptyResult);
+  const [avatarList, setAvatarList] = React.useState<Cosmetic[]>([]);
+  const [borderList, setBorderList] = React.useState<Cosmetic[]>([]);
+  const [bannerList, setBannerList] = React.useState<Cosmetic[]>([]);
   
-  const [file, setFile] = React.useState<File | string | null>(null);
-  const [color, setColor] = React.useState<string>('white');
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [borderOption, setBorderOption] = React.useState<number>(-1);
   const [bannerOption, setBannerOption] = React.useState<number>(-1);
@@ -68,6 +111,16 @@ export function AccountDetailsForm(): React.JSX.Element {
     }
   };
 
+  const backgroundStyle = React.useMemo(() => {
+    const color =
+      draftCosmetic?.profile_background !== ""
+        ? draftCosmetic?.profile_background
+        : theme.palette.background.paper;
+        
+    return {
+      backgroundImage: `linear-gradient(to right, ${theme.palette.background.paper}, ${color}, ${theme.palette.background.paper})`
+    };
+  }, [draftCosmetic?.profile_background, theme]);
 
   function formatName(name: string | undefined): string {
     if (!name) return '';
@@ -96,36 +149,27 @@ export function AccountDetailsForm(): React.JSX.Element {
 
   const setUserData = React.useCallback(async (): Promise<void> => {
     if (eduquestUser && cosmetic) {
+      setUserAvatarProps({
+        name: formatName(eduquestUser.nickname),
+        bgColor: 'var(--mui-palette-neutral-900)',
+        textColor: "white",
+      });
+      console.log(cosmetic)
       try {
-        logger.debug("User Avatar: ", cosmetic.profile_picture.filename);
-        if (cosmetic.profile_picture.filename === '') {
+        if (cosmetic.profile_picture === undefined || cosmetic.profile_picture.image.filename === '') {
           setShowUserInitials(true);
-          setUserAvatarProps({
-            name: formatName(eduquestUser.nickname),
-            bgColor: 'var(--mui-palette-neutral-900)',
-            textColor: "white",
-          });
         } else {
-          setUserPhoto(cosmetic.profile_picture.filename);
-          setFile(cosmetic.profile_picture.filename);
           setShowUserInitials(false);
-        }
-
-        if (cosmetic.profile_background != '') {
-          setColor(cosmetic.profile_background);
-        }
-        else {
-          setColor('white');
         }
       } catch (error) {
         setShowUserInitials(true);
-        setUserAvatarProps({
-          name: formatName(eduquestUser.nickname),
-          bgColor: 'var(--mui-palette-neutral-900)',
-          textColor: "white",
-        });
         logger.error('Error fetching user photo: ', error)
       }
+
+      setDraftCosmetic(cosmetic);
+      setAvatarList(cosmetic.owns.filter(item => item.type == CosmeticType.Picture))
+      setBorderList(cosmetic.owns.filter(item => item.type == CosmeticType.Border))
+      setBannerList(cosmetic.owns.filter(item => item.type == CosmeticType.Banner))
     }
     else if (eduquestUser) {
       setShowUserInitials(true);
@@ -134,7 +178,6 @@ export function AccountDetailsForm(): React.JSX.Element {
         bgColor: 'var(--mui-palette-neutral-900)',
         textColor: "white",
       });
-      setColor('white');
     }
   }, [cosmetic, eduquestUser]);
 
@@ -147,6 +190,7 @@ export function AccountDetailsForm(): React.JSX.Element {
     });
   }, [eduquestUser, setUserData]);
 
+  // Handlers for Avatar Edit Popover
   const openAvatarEditChange = (event: React.MouseEvent<HTMLElement>): void => {
     setAnchorEl(event.currentTarget);
     setOpenAvatarEdit(true);
@@ -157,22 +201,44 @@ export function AccountDetailsForm(): React.JSX.Element {
     setOpenAvatarEdit(false);
   }
 
+  // Handlers for Avatar Change Dialog
   const openAvatarChange = (): void => {
     setOpenAvatar(true);
     closeAvatarEditChange();
   }
 
-  const closeAvatarChange = (): void => {
+  const closeAvatarChange = async (): Promise<void> => {
     setOpenAvatar(false);
-    setFile(null);
-    setColor('white');
+    await refreshUser();
   }
 
-  const submitAvatarChange = (): void => {
-    // Save the avatar change (file or color) to the server here
+  const updateAvatarChange = (fileImage: Cosmetic | null): void => {
+    setDraftCosmetic(prev => {
+      if (!prev) return prev; 
+      
+      let image: Cosmetic = emptyCosmetic;
+
+      if (fileImage != null) {
+          image = fileImage;
+          setShowUserInitials(false);
+      }
+      else {
+        setShowUserInitials(true);
+      }
+
+      return {
+        ...prev, 
+        profile_picture: image, 
+      }; 
+    }); 
+  }
+
+  const submitAvatarChange = async (): Promise<void> => {
+    await updateUserCosmetic(draftCosmetic);
     closeAvatarChange();
   }
 
+  // Handlers for Background Change Popover
   const openBackgroundChange = (event: React.MouseEvent<HTMLElement>): void => {
     setAnchorEl(event.currentTarget);
     setOpenBackground(true);
@@ -183,11 +249,24 @@ export function AccountDetailsForm(): React.JSX.Element {
     await refreshUser();
   }
 
-  const submitBackgroundChange = (): void => {
-    // Save the background change (file) to the server here
-    closeBackgroundChange();
+  const updateBackgroundColor = (colorOption: string): void => { 
+    setDraftCosmetic(prev => {
+      if (!prev) return prev; 
+      
+      return {
+        ...prev, 
+        profile_background: colorOption, 
+      }; 
+    }); 
+  };
+
+  const submitBackgroundChange = async (): Promise<void> => {
+    await updateUserCosmetic(draftCosmetic);
+    setOpenBackground(false);
+    setAnchorEl(null);
   }
 
+  // Handlers for Border Change Dialog
   const openBorderChange = (): void => {
     setOpenBorder(true);
     setOpenAvatarEdit(false);
@@ -202,6 +281,7 @@ export function AccountDetailsForm(): React.JSX.Element {
     setBorderOption(-1);
   }
 
+  // Handlers for Banner Change Dialog
   const openBannerChange = (): void => {
     setOpenBanner(true);
   }
@@ -215,6 +295,7 @@ export function AccountDetailsForm(): React.JSX.Element {
     setBannerOption(-1);
   }
 
+  // Handlers for Badges Change Dialog
   const openBadgesChange = (): void => {
     setOpenBadges(true);
   }
@@ -244,7 +325,7 @@ export function AccountDetailsForm(): React.JSX.Element {
   return (
     <form onSubmit={handleSubmit}>
       <Card>
-        <CardContent style={{backgroundImage: `linear-gradient(to right, white, ${color}, white)`}}>
+        <CardContent style={backgroundStyle}>
           <Grid container spacing={3}>
             <Grid sm={6} xs={12}>
               <Grid style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', marginBottom: '64px' }}>
@@ -275,9 +356,9 @@ export function AccountDetailsForm(): React.JSX.Element {
                     {
                       showUserInitials ?
                         <UserAvatar size='48px' {...userAvatarProps}/>
-                        : userPhoto ?
+                        : draftCosmetic.profile_picture?.image?.filename ?
                         <Avatar
-                          src={userPhoto}
+                          src={`/assets/${draftCosmetic.profile_picture?.image.filename}`}
                           sx={{width: 48, height: 48}}
                         /> : <UserIcon size={32} color="var(--mui-palette-primary-main)" />
                     }
@@ -424,30 +505,26 @@ export function AccountDetailsForm(): React.JSX.Element {
         <DialogContent>
           <Card sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
             <CardContent>
-              <Button
-                variant="text"
-                component="label"
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: 64,
+                  height: 64,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                <input
-                    type="file"
-                    id="file-upload"
-                    name="file"
-                    accept="image/*"
-                    hidden
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                        if (event.target.files && event.target.files.length > 0) {
-                            setFile(event.target.files[0]);
-                        }
-                    }}
-                />
-                {file ? 
-                  <Avatar
-                    src={URL.createObjectURL(file)}
-                    sx={{width: 48, height: 48}}
-                  /> :
-                  <Typography variant='body1'>Upload File</Typography>
+                {
+                  showUserInitials ?
+                    <UserAvatar size='48px' {...userAvatarProps}/>
+                    : draftCosmetic.profile_picture?.image?.filename ?
+                    <Avatar
+                      src={`/assets/${draftCosmetic.profile_picture.image.filename}`}
+                      sx={{width: 48, height: 48}}
+                    /> : <UserIcon size={32} color="var(--mui-palette-primary-main)" />
                 }
-              </Button>
+              </Box>
             </CardContent>
 
             <Divider orientation='vertical' flexItem/>
@@ -457,50 +534,23 @@ export function AccountDetailsForm(): React.JSX.Element {
 
               <Grid direction="row" container>
                 <Grid sm={4} xs={8}>
-	                  <IconButton onClick={() => { setFile(null); }}>
+	                <IconButton onClick={() => { updateAvatarChange(null); }} sx={(draftCosmetic.profile_picture?.name == null || draftCosmetic.profile_picture?.name == '') ? {backgroundColor : theme.palette.action.selected} : null}>
                     <UserAvatar {...userAvatarProps}/>
                   </IconButton>
                 </Grid>
 
                 {
-                  userPhoto ?
-                  <Grid sm={4} xs={8}>
-                      <IconButton onClick={() => { setFile(userPhoto); }}>
-                      <Avatar
-                        src={userPhoto}
-                        sx={{width: 48, height: 48}}
-                      />
-                    </IconButton>
-                  </Grid>
-                  : null
-                }
-
-                {
-                  pictureList?.map((item: Cosmetic) => (
-                    <Grid sm={4} xs={8}>
-                        <IconButton onClick={() => { setColor('blue'); }}>
-                        <Avatar sx={{ bgcolor: 'blue' }} />
+                  avatarList.map((item: Cosmetic) => (
+                    <Grid key={item.type + item.id} sm={4} xs={8}>
+                      <IconButton key={item.type + item.id} onClick={() => { updateAvatarChange(item)  }} sx={(draftCosmetic.profile_picture?.name != null && item.image.id === draftCosmetic.profile_picture?.image?.id) ? {backgroundColor : theme.palette.action.selected} : null}>
+                        <Avatar
+                          alt={item.image.filename}
+                          src={`/assets/${item.image.filename}`}
+                        />
                       </IconButton>
                     </Grid>
                   ))
                 }
-                <Grid sm={4} xs={8}>
-	                  <IconButton onClick={() => { setColor('blue'); }}>
-                    <Avatar sx={{ bgcolor: 'blue' }} />
-                  </IconButton>
-                </Grid>
-
-                <Grid sm={4} xs={8}>
-	                  <IconButton onClick={() => { setColor('yellow'); }}>
-                    <Avatar sx={{ bgcolor: 'yellow' }} />
-                  </IconButton>
-                </Grid>
-
-                <Grid sm={4} xs={8}>
-	                  <IconButton onClick={() => { setColor('green'); }}>
-                    <Avatar sx={{ bgcolor: 'green' }} />
-                  </IconButton>
-                </Grid>
               </Grid>
             </CardContent>
           </Card>
@@ -524,10 +574,15 @@ export function AccountDetailsForm(): React.JSX.Element {
           <Card>
             <CardContent>
               <Grid direction="row" container>
+                <Grid xs={2}>
+                    <IconButton onClick={() => { updateBackgroundColor('theme.palette.background.paper')}}>
+                    <CircleIcon htmlColor={theme.palette.background.paper} fontSize="large" />
+                  </IconButton>
+                </Grid>
                 {
                   colorsAvailable.map((colorOption: string) => (
-                    <Grid xs={2}>
-                        <IconButton onClick={() => { setColor(colorOption); }}>
+                    <Grid key={colorOption} xs={2}>
+                        <IconButton onClick={() => { updateBackgroundColor(colorOption)}}>
                         <CircleIcon htmlColor={colorOption} fontSize="large" />
                       </IconButton>
                     </Grid>
@@ -594,7 +649,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
               <Grid direction="row" container spacing={3}>
                 {
-                  borderList?.map((item: Cosmetic) => (
+                  cosmetic?.owns?.map((item: Cosmetic) => (
                     <Grid sm={6} xs={12}>
                       <IconButton onClick={() => { setBorderOption(1); }}>
                         <Box
