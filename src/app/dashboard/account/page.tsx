@@ -3,12 +3,9 @@ import type { Metadata } from 'next';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Unstable_Grid2';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 
 import { config } from '@/config';
 import { AccountDetailsForm } from '@/components/dashboard/account/account-details-form';
-import DragDropProvider from '@/components/dashboard/misc/drag-drop-provider';
 // import { AccountInfo } from '@/components/dashboard/account/account-info';
 
 export const metadata = { title: `Account | ${config.site.name}` } satisfies Metadata;
@@ -23,10 +20,8 @@ export default function Page(): React.JSX.Element {
         {/*<Grid lg={4} md={6} xs={12}>*/}
         {/*  <AccountInfo />*/}
         {/*</Grid>*/}
-        <Grid lg={8} md={6} xs={12}>
-          <DragDropProvider>
-            <AccountDetailsForm />
-          </DragDropProvider>
+        <Grid lg={12} md={14} xs={16}>
+          <AccountDetailsForm />
         </Grid>
       </Grid>
     </Stack>
