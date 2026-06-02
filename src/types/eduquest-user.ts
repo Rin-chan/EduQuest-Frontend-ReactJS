@@ -1,6 +1,5 @@
 import { Badge } from "./badge";
 import { Cosmetic } from "./cosmetic";
-import { Image } from "./image";
 
 export interface UserGoals {
   id: number;

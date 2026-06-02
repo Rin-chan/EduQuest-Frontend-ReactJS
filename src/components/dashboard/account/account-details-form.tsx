@@ -31,12 +31,14 @@ import CircleIcon from '@mui/icons-material/Circle';
 import Box from "@mui/material/Box";
 import Badge from '@mui/material/Badge';
 import Checkbox from '@mui/material/Checkbox';
-import {DraggableBadge} from "@/components/dashboard/account/account-drag-and-drop";
 import { Image } from '@/types/image';
 import { Cosmetic, CosmeticType } from '@/types/cosmetic';
 import { updateUserCosmetic } from '@/api/services/eduquest-user';
 import { EduquestUserCosmeticResult } from '@/types/eduquest-user';
 import {useTheme} from '@mui/material/styles';
+import { getUserCourseBadgesByUser } from '@/api/services/badge';
+import type { UserCourseBadge } from '@/types/user-course-badge';
+import { Badge as BadgeType } from '@/types/badge';
 
 /*
 ------------------------------------------
@@ -79,10 +81,12 @@ const emptyResult: EduquestUserCosmeticResult = {
 }
 
 export function AccountDetailsForm(): React.JSX.Element {
+  const dragItemIndex = React.useRef<number | null>(null);
+  const dragOverIndex = React.useRef<number | null>(null);
+
   const theme = useTheme();
   const { eduquestUser, cosmetic, checkSession } = useUser();
   const nicknameRef = React.useRef<HTMLInputElement>(null);
-  const [userPhoto, setUserPhoto] = React.useState<string | null>(null);
   const [showUserInitials, setShowUserInitials] = React.useState<boolean>(false);
   const [userAvatarProps, setUserAvatarProps] = React.useState<UserAvatarProps>({
     name: '?',
@@ -92,11 +96,10 @@ export function AccountDetailsForm(): React.JSX.Element {
   const [avatarList, setAvatarList] = React.useState<Cosmetic[]>([]);
   const [borderList, setBorderList] = React.useState<Cosmetic[]>([]);
   const [bannerList, setBannerList] = React.useState<Cosmetic[]>([]);
+  const [badgeList, setBadgeList] = React.useState<UserCourseBadge[]>([]);
   
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
-  const [borderOption, setBorderOption] = React.useState<number>(-1);
-  const [bannerOption, setBannerOption] = React.useState<number>(-1);
-  const [badgesSelected, setBadgesSelected] = React.useState<string[]>([]);
+  const [badgesSelected, setBadgesSelected] = React.useState<BadgeType[]>([]);
 
   const [openAvatarEdit, setOpenAvatarEdit] = React.useState(false);
   const [openAvatar, setOpenAvatar] = React.useState(false);
@@ -167,9 +170,11 @@ export function AccountDetailsForm(): React.JSX.Element {
       }
 
       setDraftCosmetic(cosmetic);
+      setBadgesSelected(cosmetic.displayed_badges);
       setAvatarList(cosmetic.owns.filter(item => item.type == CosmeticType.Picture))
       setBorderList(cosmetic.owns.filter(item => item.type == CosmeticType.Border))
       setBannerList(cosmetic.owns.filter(item => item.type == CosmeticType.Banner))
+      setBadgeList(await getUserCourseBadgesByUser(eduquestUser.id.toString()));
     }
     else if (eduquestUser) {
       setShowUserInitials(true);
@@ -178,6 +183,7 @@ export function AccountDetailsForm(): React.JSX.Element {
         bgColor: 'var(--mui-palette-neutral-900)',
         textColor: "white",
       });
+      setBadgeList(await getUserCourseBadgesByUser(eduquestUser.id.toString()));
     }
   }, [cosmetic, eduquestUser]);
 
@@ -271,28 +277,62 @@ export function AccountDetailsForm(): React.JSX.Element {
     setOpenBorder(true);
     setOpenAvatarEdit(false);
   }
+
   const closeBorderChange = (): void => {
     setOpenBorder(false);
   }
 
-  const submitBorderChange = (): void => {
-    // Save the border change (color) to the server here
+  const updateBorderChange = (fileImage: Cosmetic | null): void => {
+    setDraftCosmetic(prev => {
+      if (!prev) return prev; 
+      
+      let image: Cosmetic = emptyCosmetic;
+
+      if (fileImage != null) {
+          image = fileImage;
+      }
+
+      return {
+        ...prev, 
+        profile_border: image, 
+      }; 
+    }); 
+  }
+
+  const submitBorderChange = async (): Promise<void> => {
+    await updateUserCosmetic(draftCosmetic);
     closeBorderChange();
-    setBorderOption(-1);
   }
 
   // Handlers for Banner Change Dialog
   const openBannerChange = (): void => {
     setOpenBanner(true);
   }
+
   const closeBannerChange = (): void => {
     setOpenBanner(false);
   }
 
-  const submitBannerChange = (): void => {
-    // Save the banner change (color) to the server here
+  const updateBannerChange = (fileImage: Cosmetic | null): void => {
+    setDraftCosmetic(prev => {
+      if (!prev) return prev; 
+      
+      let image: Cosmetic = emptyCosmetic;
+
+      if (fileImage != null) {
+          image = fileImage;
+      }
+
+      return {
+        ...prev, 
+        banner: image, 
+      }; 
+    }); 
+  }
+
+  const submitBannerChange = async (): Promise<void> => {
+    await updateUserCosmetic(draftCosmetic);
     closeBannerChange();
-    setBannerOption(-1);
   }
 
   // Handlers for Badges Change Dialog
@@ -301,26 +341,24 @@ export function AccountDetailsForm(): React.JSX.Element {
   }
   const closeBadgesChange = (): void => {
     setOpenBadges(false);
-    setBadgesSelected([]);
   }
 
-  const submitBadgesChange = (): void => {
-    // Save the badges change (color) to the server here
+  const submitBadgesChange = async (): Promise<void> => {
+    await updateUserCosmetic({
+      ...draftCosmetic,
+      displayed_badges: badgesSelected
+    });
     closeBadgesChange();
   }
 
-  function moveBadge(dragIndex: number, hoverIndex: number): void {
+  const moveBadge = (from: number, to: number) => {
     setBadgesSelected((prev) => {
       const updated = [...prev];
-
-      const draggedItem = updated[dragIndex];
-
-      updated.splice(dragIndex, 1);
-      updated.splice(hoverIndex, 0, draggedItem);
-
+      const [moved] = updated.splice(from, 1);
+      updated.splice(to, 0, moved);
       return updated;
     });
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit}>
@@ -333,26 +371,31 @@ export function AccountDetailsForm(): React.JSX.Element {
                   <Box
                     sx={{
                       position: 'relative',
-                      width: 64,
-                      height: 64,
+                      width: 72,
+                      height: 72,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
-                    <Box
-                      component="img"
-                      src="https://png.pngtree.com/png-vector/20250724/ourmid/pngtree-elegant-gold-circle-frame-png-image_16679818.webp"
-                      sx={{
-                        position: 'absolute',
-                          width: 64,
-                          height: 64,
-                          top: 0,
-                          left: 0,
-                          pointerEvents: 'none',
-                          zIndex: 1,
-                      }}
-                    />
+                    {
+                      draftCosmetic.profile_border?.image.filename ?
+                      <Box
+                        component="img"
+                        src={`/assets/${draftCosmetic.profile_border.image.filename}`}
+                        sx={{
+                          position: 'absolute',
+                            width: 72,
+                            height: 72,
+                            top: 0,
+                            left: 0,
+                            pointerEvents: 'none',
+                            zIndex: 1,
+                        }}
+                      />
+                      : null
+                    }
+
                     {
                       showUserInitials ?
                         <UserAvatar size='48px' {...userAvatarProps}/>
@@ -534,7 +577,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
               <Grid direction="row" container>
                 <Grid sm={4} xs={8}>
-	                <IconButton onClick={() => { updateAvatarChange(null); }} sx={(draftCosmetic.profile_picture?.name == null || draftCosmetic.profile_picture?.name == '') ? {backgroundColor : theme.palette.action.selected} : null}>
+	                <IconButton onClick={() => { updateAvatarChange(null); }} sx={(draftCosmetic.profile_picture?.image.name == null || draftCosmetic.profile_picture?.image.name == '') ? {backgroundColor : theme.palette.action.selected} : null}>
                     <UserAvatar {...userAvatarProps}/>
                   </IconButton>
                 </Grid>
@@ -542,7 +585,7 @@ export function AccountDetailsForm(): React.JSX.Element {
                 {
                   avatarList.map((item: Cosmetic) => (
                     <Grid key={item.type + item.id} sm={4} xs={8}>
-                      <IconButton key={item.type + item.id} onClick={() => { updateAvatarChange(item)  }} sx={(draftCosmetic.profile_picture?.name != null && item.image.id === draftCosmetic.profile_picture?.image?.id) ? {backgroundColor : theme.palette.action.selected} : null}>
+                      <IconButton key={item.type + item.id} onClick={() => { updateAvatarChange(item)  }} sx={(draftCosmetic.profile_picture?.image.name != null && item.image.id === draftCosmetic.profile_picture?.image?.id) ? {backgroundColor : theme.palette.action.selected} : null}>
                         <Avatar
                           alt={item.image.filename}
                           src={`/assets/${item.image.filename}`}
@@ -610,32 +653,37 @@ export function AccountDetailsForm(): React.JSX.Element {
               <Box
                 sx={{
                   position: 'relative',
-                  width: 64,
-                  height: 64,
+                  width: 72,
+                  height: 72,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <Box
-                  component="img"
-                  src="https://png.pngtree.com/png-vector/20250724/ourmid/pngtree-elegant-gold-circle-frame-png-image_16679818.webp"
-                  sx={{
-                    position: 'absolute',
-                    width: 64,
-                    height: 64,
-                    top: 0,
-                    left: 0,
-                    pointerEvents: 'none',
-                    zIndex: 1,
-                  }}
-                />
+                {
+                  draftCosmetic.profile_border?.image?.filename ?
+                  <Box
+                    component="img"
+                    src={`/assets/${draftCosmetic.profile_border.image.filename}`}
+                    sx={{
+                      position: 'absolute',
+                      width: 72,
+                      height: 72,
+                      top: 0,
+                      left: 0,
+                      pointerEvents: 'none',
+                      zIndex: 1,
+                    }}
+                  />
+                  : null
+                }
+
                 {
                   showUserInitials ?
                     <UserAvatar size='48px' {...userAvatarProps}/>
-                    : userPhoto ?
+                    : draftCosmetic.profile_picture?.image?.filename ?
                     <Avatar
-                      src={userPhoto}
+                      src={`/assets/${draftCosmetic.profile_picture.image.filename}`}
                       sx={{width: 48, height: 48}}
                     /> : <UserIcon size={32} color="var(--mui-palette-primary-main)" />
                 }
@@ -648,10 +696,27 @@ export function AccountDetailsForm(): React.JSX.Element {
               <Typography variant="body1">Choose Border</Typography>
 
               <Grid direction="row" container spacing={3}>
+                <Grid sm={4} xs={8}>
+                  <IconButton onClick={() => { updateBorderChange(null); }} sx={(draftCosmetic.profile_border?.image.name == null || draftCosmetic.profile_border?.image.name == '') ? {backgroundColor : theme.palette.action.selected} : null}>
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        width: 64,
+                        height: 64,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      >
+                      <Avatar sx={{width: 48, height: 48}}/>
+                    </Box>
+                  </IconButton>
+                </Grid>
+
                 {
-                  cosmetic?.owns?.map((item: Cosmetic) => (
-                    <Grid sm={6} xs={12}>
-                      <IconButton onClick={() => { setBorderOption(1); }}>
+                  borderList?.map((item: Cosmetic) => (
+                    <Grid key={item.type + item.id} sm={4} xs={8}>
+                      <IconButton onClick={() => { updateBorderChange(item); }} sx={(draftCosmetic.profile_border?.image.name != null && draftCosmetic.profile_border?.image.id == item.image.id) ? {backgroundColor : theme.palette.action.selected} : null}>
                         <Box
                           sx={{
                             position: 'relative',
@@ -664,7 +729,7 @@ export function AccountDetailsForm(): React.JSX.Element {
                           >
                           <Box
                             component="img"
-                            src="https://png.pngtree.com/png-vector/20250724/ourmid/pngtree-elegant-gold-circle-frame-png-image_16679818.webp"
+                            src={`/assets/${item.image.filename}`}
                             sx={{
                               position: 'absolute',
                               width: 64,
@@ -672,6 +737,7 @@ export function AccountDetailsForm(): React.JSX.Element {
                               top: 0,
                               left: 0,
                               pointerEvents: 'none',
+                              zIndex: 1,
                             }}
                           />
                           <Avatar sx={{width: 48, height: 48}}/>
@@ -680,65 +746,6 @@ export function AccountDetailsForm(): React.JSX.Element {
                     </Grid>
                   ))
                 }
-
-                <Grid sm={6} xs={12}>
-	                  <IconButton onClick={() => { setBorderOption(1); }}>
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        width: 64,
-                        height: 64,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src="https://png.pngtree.com/png-vector/20250724/ourmid/pngtree-elegant-gold-circle-frame-png-image_16679818.webp"
-                        sx={{
-                          position: 'absolute',
-                          width: 64,
-                          height: 64,
-                          top: 0,
-                          left: 0,
-                          pointerEvents: 'none',
-                        }}
-                      />
-                      <Avatar sx={{width: 48, height: 48}}/>
-                    </Box>
-                  </IconButton>
-                </Grid>
-
-                <Grid sm={6} xs={12}>
-	                  <IconButton onClick={() => { setBorderOption(2); }}>
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        width: 64,
-                        height: 64,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src="https://png.pngtree.com/png-clipart/20230403/original/pngtree-circle-border-design-png-image_9024072.png"
-                        sx={{
-                          position: 'absolute',
-                          width: 64,
-                          height: 64,
-                          top: 0,
-                          left: 0,
-                          pointerEvents: 'none',
-                          zIndex: 1,
-                        }}
-                      />
-                      <Avatar sx={{width: 48, height: 48}}/>
-                    </Box>
-                  </IconButton>
-                </Grid>
               </Grid>
             </CardContent>
           </Card>
@@ -749,7 +756,7 @@ export function AccountDetailsForm(): React.JSX.Element {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={openBanner} onClose={closeBannerChange}>
+      <Dialog open={openBanner} onClose={closeBannerChange} fullWidth maxWidth="md">
         <DialogTitle>
             <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
             Change Banner
@@ -765,7 +772,9 @@ export function AccountDetailsForm(): React.JSX.Element {
                     md={6} 
                     xs={12} 
                     sx={{
-                      backgroundImage: 'url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQic0vjbZ9kDfF0KQMCQso5MSaWTypoMte02w&s)', 
+                      backgroundImage: draftCosmetic?.banner?.image.filename ?
+                        `url(/assets/${draftCosmetic.banner.image.filename})`
+                        : null, 
                       backgroundSize: 'cover', 
                       backgroundPosition: 'center', 
                       minHeight: '5em', 
@@ -775,24 +784,25 @@ export function AccountDetailsForm(): React.JSX.Element {
                     >
                       <Stack direction="row" sx={{padding: 2}}>
                           <Box>
-                              <Avatar
-                                  src="/assets/avatar-1.png"
-                                  alt="Avatar of user 1"
-                                  sx={{ 
-                                    width: 64, 
-                                    height: 64,
-                                  }}
-                              />
+                              {
+                                showUserInitials ?
+                                  <UserAvatar size='48px' {...userAvatarProps}/>
+                                  : draftCosmetic.profile_picture?.image?.filename ?
+                                  <Avatar
+                                    src={`/assets/${draftCosmetic.profile_picture?.image.filename}`}
+                                    sx={{width: 48, height: 48}}
+                                  /> : <UserIcon size={32} color="var(--mui-palette-primary-main)" />
+                              }
                           </Box>
 
                           <Stack direction="column" spacing={0} sx={{display: 'flex', paddingLeft: 3, justifyContent: 'center'}}>
-                              <Typography variant="h4">Name</Typography>
+                              <Typography variant="h5">{eduquestUser?.nickname}</Typography>
                               <Stack direction="row" spacing={1} sx={{display: 'flex', alignItems: 'center'}}>
-	                                  <img
-                                          alt=""
-	                                      width={25}
-	                                      height={25}
-	                                  />
+                                  <Box
+                                    width={25}
+                                    height={25}
+                                    borderRadius="50%"
+                                  />
                               </Stack>
                           </Stack>
                       </Stack>
@@ -805,38 +815,42 @@ export function AccountDetailsForm(): React.JSX.Element {
             <CardContent>
               <Typography variant="body1">Choose Banner</Typography>
 
-              <Grid direction="row" container spacing={2}>
-                <Grid>
-	                  <Button onClick={() => { setBannerOption(1); }}>
+              <Grid direction="row" container spacing={3}>
+                <Grid xs={12} sm={6} md={5}>
+	                  <Button onClick={() => { updateBannerChange(null); }} sx={(draftCosmetic.banner?.image.name == null || draftCosmetic.banner?.image.name == '') ? {backgroundColor : theme.palette.action.selected} : null}>
 	                    <Grid 
 	                      direction="row"
-                      sx={{
-                        backgroundImage: '', 
-                        backgroundSize: 'cover', 
-                        backgroundPosition: 'center', 
-                        minHeight: '5em', 
-                        minWidth: '10em',
-                        border: '1px solid black'
-                      }}
+                        sx={{
+                          backgroundImage: '', 
+                          backgroundSize: 'cover', 
+                          backgroundPosition: 'center', 
+                          minHeight: '5em', 
+                          minWidth: '10em',
+                          border: '1px solid black'
+                        }}
 	                      />
                   </Button>
                 </Grid>
 
-                <Grid>
-	                  <Button onClick={() => { setBannerOption(2); }}>
-	                    <Grid 
-	                      direction="row" 
-                      sx={{
-                        backgroundImage: 'url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQic0vjbZ9kDfF0KQMCQso5MSaWTypoMte02w&s)', 
-                        backgroundSize: 'cover', 
-                        backgroundPosition: 'center', 
-                        minHeight: '5em', 
-                        minWidth: '10em',
-                        border: '1px solid black'
-                      }}
+                {
+                  bannerList?.map((item: Cosmetic) => (
+                    <Grid key={item.type + item.id} xs={12} sm={6} md={5}>
+                      <Button onClick={() => { updateBannerChange(item); }} sx={(draftCosmetic.banner?.image.name != null && draftCosmetic.banner?.image.id == item.image.id) ? {backgroundColor : theme.palette.action.selected} : null}>
+                        <Grid
+	                        direction="row" 
+                          sx={{
+                            backgroundImage: `url(/assets/${item.image.filename})`, 
+                            backgroundSize: 'cover', 
+                            backgroundPosition: 'center', 
+                            minHeight: '5em', 
+                            minWidth: '10em',
+                            border: '1px solid black'
+                          }}
 	                      />
-                  </Button>
-                </Grid>
+                      </Button>
+                    </Grid>
+                  ))
+                }
               </Grid>
             </CardContent>
           </Card>
@@ -847,7 +861,7 @@ export function AccountDetailsForm(): React.JSX.Element {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={openBadges} onClose={closeBadgesChange}>
+      <Dialog open={openBadges} onClose={closeBadgesChange} fullWidth maxWidth="md">
         <DialogTitle>
             <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
             Change Badges
@@ -857,16 +871,54 @@ export function AccountDetailsForm(): React.JSX.Element {
         <DialogContent>
           <Card sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
             <CardContent>
-                <div>
-                  {badgesSelected.map((badge, index) => (
-                    <DraggableBadge
-	                      key={`${badge}-${String(index)}`}
-                      badge={badge}
-                      index={index}
-                      moveBadge={moveBadge}
+              <Typography variant="overline">Displayed Badges (Drag to reorder)</Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 2,
+                }}
+              >
+                {badgesSelected.map((badge, index) => (
+                  <Box
+                    key={badge.id}
+                    draggable
+                    onDragStart={() => {
+                      dragItemIndex.current = index;
+                    }}
+                    onDragEnter={() => {
+                      dragOverIndex.current = index;
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                    }}
+                    onDragEnd={() => {
+                      const from = dragItemIndex.current;
+                      const to = dragOverIndex.current;
+
+                      if (from === null || to === null || from === to) return;
+
+                      moveBadge(from, to);
+
+                      dragItemIndex.current = null;
+                      dragOverIndex.current = null;
+                    }}
+                    sx={{
+                      width: 64,
+                      height: 64,
+                      cursor: "grab",
+                      "&:active": { cursor: "grabbing" },
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ textAlign: 'center' }}>{index + 1}</Typography>
+                    <Box
+                      component="img"
+                      src={`/assets/${badge.image.filename}`}
+                      sx={{ width: 64, height: 64 }}
                     />
-                  ))}
-                </div>
+                  </Box>
+                ))}
+              </Box>
             </CardContent>
 
             <Divider orientation='vertical' flexItem/>
@@ -874,71 +926,46 @@ export function AccountDetailsForm(): React.JSX.Element {
             <CardContent>
               <Typography variant="body1">Choose Badges</Typography>
 
-              <Stack direction="row" spacing={2} sx={{marginTop: 2}}>
-                <Button 
-                  variant="text"
-                  onClick={() => {
-                    if (badgesSelected.includes('badge1')) {
-                      setBadgesSelected(badgesSelected.filter(badge => badge !== 'badge1'));
-                    } else {
-                      setBadgesSelected([...badgesSelected, 'badge1']);
-                    }
-                  }}
-                >
-                  <Badge
-                    badgeContent={
-                      <Checkbox
-                        checked={badgesSelected.includes('badge1')}
-                      />
-                    } 
-                    anchorOrigin={{
-                      vertical: 'bottom',
-                      horizontal: 'right',
-                    }}
-                  >
-                    <Box 
-                      component="img"
-                      src="/assets/first_attempt_badge.svg"
-                      sx={{
-                        width: 64,
-                        height: 64,
-                      }}
-                      />
-                  </Badge>
-                </Button>
-
-                <Button 
-                  variant="text"
-                  onClick={() => {
-                    if (badgesSelected.includes('badge2')) {
-                      setBadgesSelected(badgesSelected.filter(badge => badge !== 'badge2'));
-                    } else {
-                      setBadgesSelected([...badgesSelected, 'badge2']);
-                    }
-                  }}
-                >
-                  <Badge
-                    badgeContent={
-                      <Checkbox
-                        checked={badgesSelected.includes('badge2')}
-                      />
-                    } 
-                    anchorOrigin={{
-                      vertical: 'bottom',
-                      horizontal: 'right',
-                    }}
-                  >
-                    <Box 
-                      component="img"
-                      src="/assets/full_attendance_badge.svg"
-                      sx={{
-                        width: 64,
-                        height: 64,
-                      }}
-                      />
-                  </Badge>
-                </Button>
-              </Stack>
+              <Grid direction="row" container spacing={3}>
+                {
+                  badgeList?.map((item) => (
+                    <Grid key={'Badge' + item.id} xs={12} sm={6} md={4}>
+                      <Button
+                        key={item.id}
+                        variant="text"
+                        onClick={() => {
+                          if (badgesSelected.some(badge => badge.id === item.badge.id)) {
+                            setBadgesSelected(badgesSelected.filter(badge => badge.id !== item.badge.id));
+                          } else {
+                            setBadgesSelected([...badgesSelected, item.badge]);
+                          }
+                        }}
+                      >
+                        <Badge
+                          badgeContent={
+                            <Checkbox
+                              checked={badgesSelected.some(badge => badge.id === item.badge.id)}
+                            />
+                          } 
+                          anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'right',
+                          }}
+                        >
+                          <Box 
+                            component="img"
+                            src={`/assets/${item.badge.image.filename}`}
+                            sx={{
+                              width: 64,
+                              height: 64,
+                            }}
+                            />
+                        </Badge>
+                      </Button>
+                    </Grid>
+                  ))
+                }
+                </Grid>
             </CardContent>
           </Card>
         </DialogContent>
