@@ -36,8 +36,7 @@ import { Cosmetic, CosmeticType } from '@/types/cosmetic';
 import { updateUserCosmetic } from '@/api/services/eduquest-user';
 import { EduquestUserCosmeticResult } from '@/types/eduquest-user';
 import {useTheme} from '@mui/material/styles';
-import { getUserCourseBadgesByUser } from '@/api/services/badge';
-import type { UserCourseBadge } from '@/types/user-course-badge';
+import { getUserAllBadgesByUser } from '@/api/services/badge';
 import { Badge as BadgeType } from '@/types/badge';
 import { AccountPopup } from './account-popup';
 
@@ -97,7 +96,7 @@ export function AccountDetailsForm(): React.JSX.Element {
   const [avatarList, setAvatarList] = React.useState<Cosmetic[]>([]);
   const [borderList, setBorderList] = React.useState<Cosmetic[]>([]);
   const [bannerList, setBannerList] = React.useState<Cosmetic[]>([]);
-  const [badgeList, setBadgeList] = React.useState<UserCourseBadge[]>([]);
+  const [badgeList, setBadgeList] = React.useState<BadgeType[]>([]);
   
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [badgesSelected, setBadgesSelected] = React.useState<BadgeType[]>([]);
@@ -173,10 +172,10 @@ export function AccountDetailsForm(): React.JSX.Element {
 
       setDraftCosmetic(cosmetic);
       setBadgesSelected(cosmetic.displayed_badges);
-      setAvatarList(cosmetic.owns.filter(item => item.type == CosmeticType.Picture))
-      setBorderList(cosmetic.owns.filter(item => item.type == CosmeticType.Border))
-      setBannerList(cosmetic.owns.filter(item => item.type == CosmeticType.Banner))
-      setBadgeList(await getUserCourseBadgesByUser(eduquestUser.id.toString()));
+      setAvatarList(cosmetic.owns.filter(item => item.type == CosmeticType.Picture));
+      setBorderList(cosmetic.owns.filter(item => item.type == CosmeticType.Border));
+      setBannerList(cosmetic.owns.filter(item => item.type == CosmeticType.Banner));
+      setBadgeList(await getUserAllBadgesByUser(eduquestUser.id.toString()));
     }
     else if (eduquestUser) {
       setShowUserInitials(true);
@@ -185,7 +184,7 @@ export function AccountDetailsForm(): React.JSX.Element {
         bgColor: 'var(--mui-palette-neutral-900)',
         textColor: "white",
       });
-      setBadgeList(await getUserCourseBadgesByUser(eduquestUser.id.toString()));
+      setBadgeList(await getUserAllBadgesByUser(eduquestUser.id.toString()));
     }
   }, [cosmetic, eduquestUser]);
 
@@ -946,14 +945,14 @@ export function AccountDetailsForm(): React.JSX.Element {
                         key={item.id}
                         variant="text"
                         onClick={() => {
-                          if (badgesSelected.some(badge => badge.id === item.badge.id)) {
-                            setBadgesSelected(badgesSelected.filter(badge => badge.id !== item.badge.id));
+                          if (badgesSelected.some(badge => badge.id === item.id)) {
+                            setBadgesSelected(badgesSelected.filter(badge => badge.id !== item.id));
                           } else {
                             if (badgesSelected.length >= 10) {
                               setBadgeWarning(true);
                               return;
                             }
-                            setBadgesSelected([...badgesSelected, item.badge]);
+                            setBadgesSelected([...badgesSelected, item]);
                           }
 
                           setBadgeWarning(false);
@@ -962,7 +961,7 @@ export function AccountDetailsForm(): React.JSX.Element {
                         <Badge
                           badgeContent={
                             <Checkbox
-                              checked={badgesSelected.some(badge => badge.id === item.badge.id)}
+                              checked={badgesSelected.some(badge => badge.id === item.id)}
                             />
                           } 
                           anchorOrigin={{
@@ -972,7 +971,7 @@ export function AccountDetailsForm(): React.JSX.Element {
                         >
                           <Box 
                             component="img"
-                            src={`/assets/${item.badge.image.filename}`}
+                            src={`/assets/${item.image.filename}`}
                             sx={{
                               width: 64,
                               height: 64,
