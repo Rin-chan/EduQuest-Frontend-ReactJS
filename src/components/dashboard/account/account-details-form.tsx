@@ -39,6 +39,7 @@ import {useTheme} from '@mui/material/styles';
 import { getUserCourseBadgesByUser } from '@/api/services/badge';
 import type { UserCourseBadge } from '@/types/user-course-badge';
 import { Badge as BadgeType } from '@/types/badge';
+import { AccountPopup } from './account-popup';
 
 /*
 ------------------------------------------
@@ -100,6 +101,7 @@ export function AccountDetailsForm(): React.JSX.Element {
   
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [badgesSelected, setBadgesSelected] = React.useState<BadgeType[]>([]);
+  const [badgeWarning, setBadgeWarning] = React.useState<boolean>(false);
 
   const [openAvatarEdit, setOpenAvatarEdit] = React.useState(false);
   const [openAvatar, setOpenAvatar] = React.useState(false);
@@ -159,7 +161,7 @@ export function AccountDetailsForm(): React.JSX.Element {
       });
       console.log(cosmetic)
       try {
-        if (cosmetic.profile_picture === undefined || cosmetic.profile_picture.image.filename === '') {
+        if (cosmetic.profile_picture === undefined || cosmetic.profile_picture === null) {
           setShowUserInitials(true);
         } else {
           setShowUserInitials(false);
@@ -278,8 +280,9 @@ export function AccountDetailsForm(): React.JSX.Element {
     setOpenAvatarEdit(false);
   }
 
-  const closeBorderChange = (): void => {
+  const closeBorderChange = async (): Promise<void> => {
     setOpenBorder(false);
+    await refreshUser();
   }
 
   const updateBorderChange = (fileImage: Cosmetic | null): void => {
@@ -309,8 +312,9 @@ export function AccountDetailsForm(): React.JSX.Element {
     setOpenBanner(true);
   }
 
-  const closeBannerChange = (): void => {
+  const closeBannerChange = async (): Promise<void> => {
     setOpenBanner(false);
+    await refreshUser();
   }
 
   const updateBannerChange = (fileImage: Cosmetic | null): void => {
@@ -339,8 +343,9 @@ export function AccountDetailsForm(): React.JSX.Element {
   const openBadgesChange = (): void => {
     setOpenBadges(true);
   }
-  const closeBadgesChange = (): void => {
+  const closeBadgesChange = async (): Promise<void> => {
     setOpenBadges(false);
+    await refreshUser();
   }
 
   const submitBadgesChange = async (): Promise<void> => {
@@ -422,6 +427,13 @@ export function AccountDetailsForm(): React.JSX.Element {
 
             <Grid sm={6} xs={12}>
               <Typography variant="overline" color="text.secondary">Display of profile</Typography>
+              <AccountPopup
+                eduquestUser={eduquestUser}
+                cosmetic={cosmetic}
+                editable={true}
+                draftCosmetic={draftCosmetic}
+                setDraftCosmetic={setDraftCosmetic}
+              />
             </Grid>
           </Grid>
         </CardContent>
@@ -937,8 +949,14 @@ export function AccountDetailsForm(): React.JSX.Element {
                           if (badgesSelected.some(badge => badge.id === item.badge.id)) {
                             setBadgesSelected(badgesSelected.filter(badge => badge.id !== item.badge.id));
                           } else {
+                            if (badgesSelected.length >= 10) {
+                              setBadgeWarning(true);
+                              return;
+                            }
                             setBadgesSelected([...badgesSelected, item.badge]);
                           }
+
+                          setBadgeWarning(false);
                         }}
                       >
                         <Badge
@@ -966,6 +984,8 @@ export function AccountDetailsForm(): React.JSX.Element {
                   ))
                 }
                 </Grid>
+
+                {badgeWarning ? <Typography variant="body1">Only up to 10 badges can be displayed</Typography> : null}
             </CardContent>
           </Card>
         </DialogContent>

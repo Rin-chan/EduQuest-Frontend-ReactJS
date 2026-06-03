@@ -41,7 +41,7 @@ export function MainNav(): React.JSX.Element {
   const setUserPhotoAvatar = React.useCallback(async (): Promise<void> => {
     if (eduquestUser && cosmetic) {
       try {
-        if (cosmetic.profile_picture === undefined || cosmetic.profile_picture.image.filename === '') {
+        if (cosmetic.profile_picture === undefined || cosmetic.profile_picture === null) {
           setShowUserInitials(true);
           setUserAvatarProps({
             name: formatName(eduquestUser.nickname),
