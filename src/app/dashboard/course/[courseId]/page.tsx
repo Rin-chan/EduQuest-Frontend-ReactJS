@@ -19,7 +19,7 @@ import Stack from "@mui/material/Stack";
 import Chip from "@mui/material/Chip";
 import {QuestCard} from "@/components/dashboard/quest/quest-card";
 import {useUser} from "@/hooks/use-user";
-import {CardMedia} from "@mui/material";
+import {CardMedia, Divider, Popover} from "@mui/material";
 // import {Check as CheckIcon} from "@phosphor-icons/react/dist/ssr/Check";
 // import {SignIn as SignInIcon} from "@phosphor-icons/react/dist/ssr/SignIn";
 import Box from "@mui/material/Box";
@@ -49,7 +49,9 @@ import type {CourseGroup} from "@/types/course-group";
 import {getUserCourseGroupEnrollmentsByCourseAndUser} from "@/api/services/user-course-group-enrollment";
 import type {UserCourseGroupEnrollment} from "@/types/user-course-group-enrollment";
 import {SkeletonCourseGroupCard} from "@/components/dashboard/skeleton/skeleton-course-group-card";
-
+import {LeaderboardTable} from "@/components/dashboard/leaderboard/leaderboard-table";
+import {ImportDataForm} from "@/components/dashboard/course/course-import-data";
+import {TestData} from "@/components/dashboard/course/course-test-data";
 
 interface ExpandMoreProps extends IconButtonProps {
   expand: boolean;
@@ -78,6 +80,8 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
   const [showCreateQuestForm, setShowCreateQuestForm] = React.useState(false);
   const [showCreateCourseGroupForm, setShowCreateCourseGroupForm] = React.useState(false);
   const [showEditCourseGroupForm, setShowEditCourseGroupForm] = React.useState(false);
+  const [showImportDataForm, setShowImportDataForm] = React.useState(false);
+  const [showTestData, setShowTestData] = React.useState(false);
   const [expanded, setExpanded] = React.useState(false);
   const [loadingQuests, setLoadingQuests] = React.useState(false);
   const [loadingCourse, setLoadingCourse] = React.useState(true);
@@ -86,6 +90,8 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
   const [submitStatus, setSubmitStatus] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedCourseGroupId, setSelectedCourseGroupId] = React.useState<string | null>(null);
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [openTestOption, setOpenTestOption] = React.useState(false);
 
   const handleExpandClick = (): void => {
     setExpanded(!expanded);
@@ -111,6 +117,26 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
   const toggleEditCourseForm = (): void => {
     setShowEditCourseForm(!showEditCourseForm);
   };
+
+  const toggleImportDataForm = (): void => {
+    setShowImportDataForm(!showImportDataForm);
+    closeTestOption();
+  }
+
+  const toggleTestData = (): void => {
+    setShowTestData(!showTestData);
+    closeTestOption();
+  }
+
+  const toggleTestOption = (event): void => {
+    setAnchorEl(event.currentTarget);
+    setOpenTestOption(true);
+  }
+
+  const closeTestOption = (): void => {
+    setAnchorEl(null);
+    setOpenTestOption(false);
+  }
 
   const handleDialogOpen = (): void => {
     setOpenDialog(true);
@@ -236,12 +262,16 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
     return courseGroups.find((group) => group.id.toString() === selectedCourseGroupId) || null;
   }, [courseGroups, selectedCourseGroupId]);
 
-
   return (
     <Stack spacing={3}>
       <Stack direction="row"sx={{justifyContent: 'space-between'}}>
         <Button startIcon={<CaretLeftIcon fontSize="var(--icon-fontSize-md)"/>} component={RouterLink} href={paths.dashboard.course.all}>View all Courses</Button>
 
+        {eduquestUser?.is_staff ? (
+          <Button variant="contained" onClick={toggleTestOption}>
+            Quizzes/Tests
+          </Button>
+        ) : null}
       </Stack>
 
       {!showEditCourseForm && (
@@ -249,161 +279,180 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
           <SkeletonCourseDetailCard />
         ) : (
           course ? (
-        <Card>
-          <CardHeader
-            title="Course Details"
-            subheader={`ID: ${course.id.toString()}`}
-            action={
-              eduquestUser?.is_staff ?
-                <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }} color="error">
-                  <Stack direction="row" spacing={1} sx={{alignItems: 'center'}}>
+        <div>
+          <Card>
+            <CardHeader
+              title="Course Details"
+              subheader={`ID: ${course.id.toString()}`}
+              action={
+                eduquestUser?.is_staff ?
+                  <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }} color="error">
+                    <Stack direction="row" spacing={1} sx={{alignItems: 'center'}}>
 
-                    <IOSSwitch
-                      checked={course.status === 'Active'}
-                      onClick={handleDialogOpen}
-                      inputProps={{ 'aria-label': 'Change State' }}
+                      <IOSSwitch
+                        checked={course.status === 'Active'}
+                        onClick={handleDialogOpen}
+                        inputProps={{ 'aria-label': 'Change State' }}
+                      />
+                      <Typography variant="overline" color="text.secondary">
+                        {course.status === 'Active' ? 'Active' : 'Expired'}
+                      </Typography>
+                    </Stack>
+                    <Button startIcon={<PenIcon fontSize="var(--icon-fontSize-md)" />} variant="contained" onClick={toggleEditCourseForm}>
+                      Edit Course
+                    </Button>
+                  </Stack> : null
+              }
+            />
+
+            <CardContent sx={{pb: '16px'}}>
+              <Grid container spacing={3}>
+                <Grid md={3} xs={12} display="flex" justifyContent="center" alignItems="center">
+                  {course.image?.filename ? (
+                    <CardMedia
+                      component="img"
+                      alt={course.image?.name || course.name}
+                      image={`/assets/${course.image.filename}`}
                     />
-                    <Typography variant="overline" color="text.secondary">
-                      {course.status === 'Active' ? 'Active' : 'Expired'}
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      No course image available.
                     </Typography>
-                  </Stack>
-                  <Button startIcon={<PenIcon fontSize="var(--icon-fontSize-md)" />} variant="contained" onClick={toggleEditCourseForm}>
-                    Edit Course
-                  </Button>
-                </Stack> : null
-            }
-          />
+                  )}
+                </Grid>
 
-          <CardContent sx={{pb: '16px'}}>
-            <Grid container spacing={3}>
-              <Grid md={3} xs={12} display="flex" justifyContent="center" alignItems="center">
-                {course.image?.filename ? (
-                  <CardMedia
-                    component="img"
-                    alt={course.image?.name || course.name}
-                    image={`/assets/${course.image.filename}`}
-                  />
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    No course image available.
-                  </Typography>
-                )}
+                <Grid container md={9} xs={12} >
+                  <Grid md={6} xs={12}>
+                    <Typography variant="overline" color="text.secondary">Code</Typography>
+                    <Typography variant="body2">{course.code}</Typography>
+                  </Grid>
+                  <Grid md={6} xs={12}>
+                    <Typography variant="overline" color="text.secondary">Name</Typography>
+                    <Typography variant="body2">{course.name}</Typography>
+                  </Grid>
+                  <Grid md={6} xs={12}>
+                    <Typography variant="overline" color="text.secondary" display="block">Type</Typography>
+                    <Chip label={course.type} color={
+                      course.type === 'System-enroll' ? 'primary' :
+                        course.type === 'Self-enroll' ? 'success' :
+                          course.type === 'Private' ? 'secondary' : 'default'
+                    } size="small" variant="outlined"/>
+                  </Grid>
+                  <Grid md={6} xs={12}>
+                    <Typography variant="overline" color="text.secondary" display="block">Status</Typography>
+                    <Chip label={course.status} color={
+                      course.status === 'Active' ? 'success' : 'secondary'
+                    } size="small" variant="outlined"/>
+
+                  </Grid>
+                  <Grid md={6} xs={12}>
+                    <Typography variant="overline" color="text.secondary" display="block">Coordinators</Typography>
+                    <Stack direction="row" spacing={2}>
+                      {course.coordinators_summary.map((coordinator) => (
+                        <Stack direction="row" spacing={1} key={coordinator.id} alignItems="center">
+                          <UserIcon size={18}/>
+                          <Typography variant="body2">{coordinator.nickname}</Typography>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  </Grid>
+                  <Grid xs={12}>
+                    <Typography variant="overline" color="text.secondary">Description</Typography>
+                    <Typography variant="body2">{course.description}</Typography>
+                  </Grid>
+                  <Grid xs={12}>
+                    <ExpandMore
+                      expand={expanded}
+                      onClick={handleExpandClick}
+                      aria-expanded={expanded}
+                      aria-label="show more"
+                      sx={{ display: 'flex', mx: 'auto'}}
+                    >
+                      <CaretDownIcon />
+                    </ExpandMore>
+                  </Grid>
+                </Grid>
               </Grid>
 
-              <Grid container md={9} xs={12} >
-                <Grid md={6} xs={12}>
-                  <Typography variant="overline" color="text.secondary">Code</Typography>
-                  <Typography variant="body2">{course.code}</Typography>
-                </Grid>
-                <Grid md={6} xs={12}>
-                  <Typography variant="overline" color="text.secondary">Name</Typography>
-                  <Typography variant="body2">{course.name}</Typography>
-                </Grid>
-                <Grid md={6} xs={12}>
-                  <Typography variant="overline" color="text.secondary" display="block">Type</Typography>
-                  <Chip label={course.type} color={
-                    course.type === 'System-enroll' ? 'primary' :
-                      course.type === 'Self-enroll' ? 'success' :
-                        course.type === 'Private' ? 'secondary' : 'default'
-                  } size="small" variant="outlined"/>
-                </Grid>
-                <Grid md={6} xs={12}>
-                  <Typography variant="overline" color="text.secondary" display="block">Status</Typography>
-                  <Chip label={course.status} color={
-                    course.status === 'Active' ? 'success' : 'secondary'
-                  } size="small" variant="outlined"/>
 
-                </Grid>
-                <Grid md={6} xs={12}>
-                  <Typography variant="overline" color="text.secondary" display="block">Coordinators</Typography>
-                  <Stack direction="row" spacing={2}>
-                    {course.coordinators_summary.map((coordinator) => (
-                      <Stack direction="row" spacing={1} key={coordinator.id} alignItems="center">
-                        <UserIcon size={18}/>
-                        <Typography variant="body2">{coordinator.nickname}</Typography>
-                      </Stack>
-                    ))}
-                  </Stack>
-                </Grid>
-                <Grid xs={12}>
-                  <Typography variant="overline" color="text.secondary">Description</Typography>
-                  <Typography variant="body2">{course.description}</Typography>
-                </Grid>
-                <Grid xs={12}>
-                  <ExpandMore
-                    expand={expanded}
-                    onClick={handleExpandClick}
-                    aria-expanded={expanded}
-                    aria-label="show more"
-                    sx={{ display: 'flex', mx: 'auto'}}
-                  >
-                    <CaretDownIcon />
-                  </ExpandMore>
+              <Collapse in={expanded} timeout="auto" unmountOnExit>
+              <Grid container spacing={3}>
+                <Grid md={3} xs={12} sx={{ display: { xs: 'none', md: 'block' } }}/>
+
+                <Grid container md={9} xs={12}>
+                  <Grid md={6} xs={12}>
+                    <Typography variant="overline" color="text.secondary">Term ID</Typography>
+                    <Typography variant="body2">{course.term.id}</Typography>
+                  </Grid>
+                  <Grid md={6} xs={12}>
+                    <Typography variant="overline" color="text.secondary">Term Name</Typography>
+                    <Typography variant="body2">{course.term.name}</Typography>
+                  </Grid>
+                  <Grid md={6} xs={12}>
+                    <Typography variant="overline" color="text.secondary">Term Start Date</Typography>
+                    <Typography variant="body2">{course.term.start_date}</Typography>
+                  </Grid>
+                  <Grid md={6} xs={12}>
+                    <Typography variant="overline" color="text.secondary">Term End Date</Typography>
+                    <Typography variant="body2">{course.term.end_date}</Typography>
+                  </Grid>
+                  <Grid md={6} xs={12}>
+                    <Typography variant="overline" color="text.secondary">Academic Year ID</Typography>
+                    <Typography variant="body2">{course.term.academic_year.id}</Typography>
+                  </Grid>
+                  <Grid md={6} xs={12}>
+                    <Typography variant="overline" color="text.secondary">Academic Year</Typography>
+                    <Typography variant="body2">AY {course.term.academic_year.start_year}-{course.term.academic_year.end_year}</Typography>
+                  </Grid>
                 </Grid>
               </Grid>
-            </Grid>
+              </Collapse>
+            </CardContent>
+            <CardActions sx={{ justifyContent: 'space-between'}}>
+              <Box sx={{ mx: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', my:1 }}>
+                <UserIcon size={20}/>
+                <Typography sx={{ marginLeft: '10px' }} variant="body1">
+                  {course.total_students_enrolled}
+                </Typography>
+              </Box>
+              {/*{eduquestUser && course.enrolled_users.includes(eduquestUser?.id.toString()) ? (*/}
+              {/*  <Button endIcon={<CheckIcon/>} disabled>Enrolled</Button>*/}
+              {/*) : course.type === 'System-enroll' ?*/}
+              {/*  <Button startIcon={<SignInIcon/>} disabled>Enroll</Button>*/}
+              {/*  : course.status === 'Expired' ?*/}
+              {/*    <Button startIcon={<CalendarXIcon/>} disabled>Expired</Button>*/}
+              {/*    : (*/}
+              {/*      <Button endIcon={<SignInIcon/>} onClick={() => handleEnroll()}>Enroll</Button>*/}
 
+              {/*    )}*/}
+            </CardActions>
 
-            <Collapse in={expanded} timeout="auto" unmountOnExit>
-            <Grid container spacing={3}>
-              <Grid md={3} xs={12} sx={{ display: { xs: 'none', md: 'block' } }}/>
+            <CourseExpiresDialog
+              openDialog={openDialog}
+              handleDialogClose={handleDialogClose}
+              handleDialogConfirm={handleDialogConfirm}
+              course={course}
+            />
 
-              <Grid container md={9} xs={12}>
-                <Grid md={6} xs={12}>
-                  <Typography variant="overline" color="text.secondary">Term ID</Typography>
-                  <Typography variant="body2">{course.term.id}</Typography>
-                </Grid>
-                <Grid md={6} xs={12}>
-                  <Typography variant="overline" color="text.secondary">Term Name</Typography>
-                  <Typography variant="body2">{course.term.name}</Typography>
-                </Grid>
-                <Grid md={6} xs={12}>
-                  <Typography variant="overline" color="text.secondary">Term Start Date</Typography>
-                  <Typography variant="body2">{course.term.start_date}</Typography>
-                </Grid>
-                <Grid md={6} xs={12}>
-                  <Typography variant="overline" color="text.secondary">Term End Date</Typography>
-                  <Typography variant="body2">{course.term.end_date}</Typography>
-                </Grid>
-                <Grid md={6} xs={12}>
-                  <Typography variant="overline" color="text.secondary">Academic Year ID</Typography>
-                  <Typography variant="body2">{course.term.academic_year.id}</Typography>
-                </Grid>
-                <Grid md={6} xs={12}>
-                  <Typography variant="overline" color="text.secondary">Academic Year</Typography>
-                  <Typography variant="body2">AY {course.term.academic_year.start_year}-{course.term.academic_year.end_year}</Typography>
-                </Grid>
-              </Grid>
-            </Grid>
-            </Collapse>
-          </CardContent>
-          <CardActions sx={{ justifyContent: 'space-between'}}>
-            <Box sx={{ mx: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', my:1 }}>
-              <UserIcon size={20}/>
-              <Typography sx={{ marginLeft: '10px' }} variant="body1">
-                {course.total_students_enrolled}
-              </Typography>
-            </Box>
-            {/*{eduquestUser && course.enrolled_users.includes(eduquestUser?.id.toString()) ? (*/}
-            {/*  <Button endIcon={<CheckIcon/>} disabled>Enrolled</Button>*/}
-            {/*) : course.type === 'System-enroll' ?*/}
-            {/*  <Button startIcon={<SignInIcon/>} disabled>Enroll</Button>*/}
-            {/*  : course.status === 'Expired' ?*/}
-            {/*    <Button startIcon={<CalendarXIcon/>} disabled>Expired</Button>*/}
-            {/*    : (*/}
-            {/*      <Button endIcon={<SignInIcon/>} onClick={() => handleEnroll()}>Enroll</Button>*/}
+          </Card>
 
-            {/*    )}*/}
-          </CardActions>
+          <br />
 
-          <CourseExpiresDialog
-            openDialog={openDialog}
-            handleDialogClose={handleDialogClose}
-            handleDialogConfirm={handleDialogConfirm}
-            course={course}
-          />
-
-        </Card>
+          {/* Leaderboard */}
+          {/* Should not show if no leaderboard data is available */}
+          {course ? 
+          <Card>
+            <CardHeader
+              title="Leaderboard"
+              subheader="Overall ranking for the course"
+            />
+        
+            <CardContent sx={{pb: '16px'}}>
+              <LeaderboardTable course={course} />
+            </CardContent>
+          </Card>
+          : null}
+        </div>
           ) : (
             <Typography variant="body1">Course details not available.</Typography>
           )
@@ -461,6 +510,23 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
           : null }
       </Stack>
 
+      <Popover
+          id={openTestOption ? 'simple-popover' : undefined}
+          open={openTestOption}
+          anchorEl={anchorEl}
+          onClose={closeTestOption}
+          anchorOrigin={{
+              vertical: 'center',
+              horizontal: 'left',
+          }}
+      >
+        <Stack direction="row" sx={{ justifyContent: 'flex-end', padding: 1 }}>
+          <Button variant="text" onClick={toggleTestData}>View All Data</Button>
+          <Divider orientation='vertical' flexItem sx={{ marginX: 1 }}/>
+          <Button startIcon={<UploadIcon />} variant="text" onClick={toggleImportDataForm}>Import Data</Button>
+        </Stack>
+      </Popover>
+
       {showCreateCourseGroupForm && courseGroups ?
         <CourseNewGroupForm
           onFormSubmitSuccess={async () => {
@@ -479,6 +545,22 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
         />
       ) : null}
 
+      {showTestData && course ?
+        <TestData
+          open={showTestData}
+          setOpen={setShowTestData}
+          course={course}
+        />
+        : null
+      }
+
+      {showImportDataForm && course ?
+        <ImportDataForm
+          open={showImportDataForm}
+          setOpen={setShowImportDataForm}
+        />
+        : null
+      }
 
       {loadingCourseGroups || loadingUserCourseGroupEnrollments ? (
         <SkeletonCourseGroupCard />
