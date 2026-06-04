@@ -10,7 +10,8 @@ import Stack from "@mui/material/Stack";
 import { X } from "@phosphor-icons/react";
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography/Typography';
-import { Cosmetic, CosmeticType } from '@/types/cosmetic';
+import type { Cosmetic } from '@/types/cosmetic';
+import { CosmeticType } from '@/types/cosmetic';
 import { useUser } from '@/hooks/use-user';
 import { useState, useEffect } from 'react';
 import { buyCosmeticId } from '@/api/services/cosmetic';
@@ -34,7 +35,7 @@ export function StoreEnlarge({cosmetic, open, setOpen}: StoreEnlargeProps): Reac
                 setDisabled(true);
             }
         }
-    }, [open]);
+    }, [open, eduquestUser, cosmetic]);
 
     const handleClose = (): void => {
         setOpen(false);
@@ -63,7 +64,7 @@ export function StoreEnlarge({cosmetic, open, setOpen}: StoreEnlargeProps): Reac
                     <DialogContent>
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 2, minWidth: '60vw' }}>
                             {
-                                cosmetic.type == CosmeticType.Picture ?
+                                cosmetic.type === CosmeticType.Picture ?
                                 <Box
                                     component="img"
                                     alt="Store item preview"

@@ -8,7 +8,7 @@ import { logger } from '@/lib/default-logger';
 import { initializeMsal, msalInstance } from "@/app/msal/msal";
 import { MsalProvider } from "@azure/msal-react";
 import { type AccountInfo } from "@azure/msal-browser";
-import { EduquestUserCosmeticResult, EduquestUser} from "@/types/eduquest-user";
+import type { EduquestUserCosmeticResult, EduquestUser} from "@/types/eduquest-user";
 
 export interface UserContextValue {
   user: AccountInfo | null;

@@ -15,7 +15,7 @@ import {logger} from "@/lib/default-logger";
 import type { Course } from "@/types/course";
 import { AccountPopup } from '../account/account-popup';
 import { getEduquestUser, getEduquestCosmeticDetail } from '@/api/services/eduquest-user';
-import { EduquestUser, EduquestUserCosmeticResult } from '@/types/eduquest-user';
+import type { EduquestUser, EduquestUserCosmeticResult } from '@/types/eduquest-user';
 import {useTheme} from '@mui/material/styles';
 
 interface LeaderboardTableProps {
@@ -96,18 +96,18 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
             }
         };
 
-        fetchData();
+        fetchData().catch(() => { return; });
     }, [course.id]);
 
-    const handleClose = () => {
+    const handleClose = (): void => {
         setSelected(-1);
     };
 
-    const handleChangePage = (event: unknown, newPage: number) => {
+    const handleChangePage = (event: unknown, newPage: number): void => {
         setPage(newPage);
     };
 
-    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>): void => {
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0);
     };
@@ -147,12 +147,12 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
                         return (
                         <TableRow
                             hover
-                            onClick={(event) => handleClick(event, row)}
+                            onClick={(event) => {handleClick(event, row)}}
                             aria-checked={isItemSelected}
                             tabIndex={-1}
                             key={row.student_id}
                             sx={{ cursor: 'pointer',
-                                backgroundImage: `linear-gradient(to right, ${theme.palette.background.paper}, ${userDataMap[row.student_id]?.cosmetic?.profile_background}, ${theme.palette.background.paper})`
+                                backgroundImage: `linear-gradient(to right, ${theme.palette.background.paper}, ${ userDataMap[row.student_id]?.cosmetic?.profile_background ?? theme.palette.background.paper }, ${theme.palette.background.paper})`
                              }}
                         >
                             <TableCell>{index + 1}</TableCell>
@@ -175,7 +175,7 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
             />
 
             <Popover
-                open={selected != -1}
+                open={selected !== -1}
                 onClose={handleClose}
                 anchorReference="anchorPosition"
                 anchorPosition={{

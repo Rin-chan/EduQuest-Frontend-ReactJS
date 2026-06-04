@@ -9,7 +9,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Stack from "@mui/material/Stack";
 import { X } from "@phosphor-icons/react";
-import { Course } from '@/types/course';
+import type { Course } from '@/types/course';
 import Box from '@mui/material/Box';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -19,7 +19,7 @@ import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import { set } from 'react-hook-form';
+import {logger} from "@/lib/default-logger";
 
 interface TestDataProps {
     course: Course;
@@ -72,11 +72,12 @@ export function TestData({open, setOpen, course}: TestDataProps): React.JSX.Elem
     const [selected, setSelected] = React.useState<number>(-1);
     const [editing, setEditing] = React.useState(false);
 
-    const handleChangePageFiles = (event: unknown, newPage: number) => {
+    const handleChangePageFiles = (event: unknown, newPage: number): void => {
         setPageFiles(newPage);
+        logger.debug(course);
     };
 
-    const handleChangeRowsPerPageFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChangeRowsPerPageFiles = (event: React.ChangeEvent<HTMLInputElement>): void => {
         setRowsPerPageFiles(parseInt(event.target.value, 10));
         setPageFiles(0);
     };
@@ -88,11 +89,11 @@ export function TestData({open, setOpen, course}: TestDataProps): React.JSX.Elem
         [pageFiles, rowsPerPageFiles],
     );
 
-    const handleChangePageScores = (event: unknown, newPage: number) => {
+    const handleChangePageScores = (event: unknown, newPage: number): void => {
         setPageScores(newPage);
     };
 
-    const handleChangeRowsPerPageScores = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChangeRowsPerPageScores = (event: React.ChangeEvent<HTMLInputElement>): void => {
         setRowsPerPageScores(parseInt(event.target.value, 10));
         setPageScores(0);
     };
@@ -117,7 +118,7 @@ export function TestData({open, setOpen, course}: TestDataProps): React.JSX.Elem
     const deleteFile = (id: number): void => {
         setSelected(-1);
         setDeleteConfirmation(false);
-        console.log(`Delete file with id ${id}`);
+        logger.debug(id);
     }
 
     const changeScore = (id: number, score: number): void => {
@@ -130,7 +131,6 @@ export function TestData({open, setOpen, course}: TestDataProps): React.JSX.Elem
     const saveEdit = (): void => {
         setSelected(-1);
         setEditing(false);
-        console.log('Saved changes');
     }
 
     return (
@@ -138,7 +138,7 @@ export function TestData({open, setOpen, course}: TestDataProps): React.JSX.Elem
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>
             <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
-            {selected !== -1 && editing ? `Editing File ID: ${selected}` : 'All Test Data'}
+            {selected !== -1 && editing ? `Editing File ID: ${selected.toString()}` : 'All Test Data'}
             <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={handleClose}></Button>
             </Stack>
         </DialogTitle>
@@ -167,7 +167,7 @@ export function TestData({open, setOpen, course}: TestDataProps): React.JSX.Elem
                             <TableRow
                                 hover
                                 tabIndex={-1}
-                                key={row.id}
+                                key={row.id.toString() + index.toString()}
                                 sx={{ cursor: 'pointer' }}
                             >
                                 <TableCell>{row.email}</TableCell>
@@ -228,29 +228,29 @@ export function TestData({open, setOpen, course}: TestDataProps): React.JSX.Elem
                             <TableRow
                                 hover
                                 tabIndex={-1}
-                                key={row.id}
+                                key={row.id.toString() + index.toString()}
                                 sx={{ cursor: 'pointer' }}
                             >
                                 <TableCell>{row.file}</TableCell>
                                 <TableCell align="center">
                                     {deleteConfirmation && selected === row.id ? (
-                                        <>
-                                        <Button variant="contained" onClick={() => confirmDelete(row.id, false)}>
+                                        <Stack>
+                                        <Button variant="contained" onClick={() => {confirmDelete(row.id, false)}}>
                                             Cancel
                                         </Button>
-                                        <Button variant="contained" color="error" onClick={() => deleteFile(row.id)}>
+                                        <Button variant="contained" color="error" onClick={() => {deleteFile(row.id)}}>
                                             Confirm Delete
                                         </Button>
-                                        </>
+                                        </Stack>
                                     ) : (
-                                        <>
-                                        <Button variant="contained" color="primary" onClick={() => editFile(row.id)}>
+                                        <Stack>
+                                        <Button variant="contained" color="primary" onClick={() => {editFile(row.id)}}>
                                             Edit
                                         </Button>
-                                        <Button variant="contained" color="error" onClick={() => confirmDelete(row.id, true)}>
+                                        <Button variant="contained" color="error" onClick={() => {confirmDelete(row.id, true)}}>
                                             Delete
                                         </Button>
-                                        </>
+                                        </Stack>
                                     )}
                                 </TableCell>
                             </TableRow>

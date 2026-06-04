@@ -90,7 +90,7 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
   const [submitStatus, setSubmitStatus] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedCourseGroupId, setSelectedCourseGroupId] = React.useState<string | null>(null);
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [openTestOption, setOpenTestOption] = React.useState(false);
 
   const handleExpandClick = (): void => {
@@ -128,7 +128,7 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
     closeTestOption();
   }
 
-  const toggleTestOption = (event): void => {
+  const toggleTestOption = (event: React.MouseEvent<HTMLElement>): void => {
     setAnchorEl(event.currentTarget);
     setOpenTestOption(true);
   }

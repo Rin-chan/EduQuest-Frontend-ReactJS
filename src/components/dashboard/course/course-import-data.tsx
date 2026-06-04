@@ -24,8 +24,6 @@ export function ImportDataForm({open, setOpen}: ImportDataFormProps): React.JSX.
     };
 
     const handleSubmit = () => {
-        console.log(name);
-        console.log(file);
         handleClose();
     };
 

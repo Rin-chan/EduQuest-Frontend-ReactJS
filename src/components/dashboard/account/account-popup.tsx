@@ -7,8 +7,8 @@ import Stack from "@mui/material/Stack";
 import Avatar from "@mui/material/Avatar/Avatar";
 import {UserAvatar, type UserAvatarProps} from "@/components/auth/user-avatar";
 import {User as UserIcon} from "@phosphor-icons/react/dist/ssr/User";
-import { EduquestUserCosmeticResult, EduquestUser} from "@/types/eduquest-user";
-import { Badge } from '@/types/badge';
+import type { EduquestUserCosmeticResult, EduquestUser} from "@/types/eduquest-user";
+import type { Badge } from '@/types/badge';
 import TextField from '@mui/material/TextField';
 import { updateUserCosmetic } from '@/api/services/eduquest-user';
 import Button from '@mui/material/Button';
@@ -92,9 +92,9 @@ export function AccountPopup({eduquestUser, cosmetic, editable=false, draftCosme
                 divider={
                     <Box
                         sx={(theme) => ({
-                        border: `1px solid ${'#000000'}`,
+                        border: '1px solid #000000',
                         ...theme.applyStyles('dark', {
-                            border: `1px solid ${'#000000'}`,
+                            border: '1px solid #000000',
                         }),
                         })}
                     />

@@ -31,13 +31,14 @@ import CircleIcon from '@mui/icons-material/Circle';
 import Box from "@mui/material/Box";
 import Badge from '@mui/material/Badge';
 import Checkbox from '@mui/material/Checkbox';
-import { Image } from '@/types/image';
-import { Cosmetic, CosmeticType } from '@/types/cosmetic';
+import type { Image } from '@/types/image';
+import type { Cosmetic } from '@/types/cosmetic';
+import { CosmeticType } from '@/types/cosmetic';
 import { updateUserCosmetic } from '@/api/services/eduquest-user';
-import { EduquestUserCosmeticResult } from '@/types/eduquest-user';
+import type { EduquestUserCosmeticResult } from '@/types/eduquest-user';
 import {useTheme} from '@mui/material/styles';
 import { getUserAllBadgesByUser } from '@/api/services/badge';
-import { Badge as BadgeType } from '@/types/badge';
+import type { Badge as BadgeType } from '@/types/badge';
 import { AccountPopup } from './account-popup';
 
 /*
@@ -158,7 +159,6 @@ export function AccountDetailsForm(): React.JSX.Element {
         bgColor: 'var(--mui-palette-neutral-900)',
         textColor: "white",
       });
-      console.log(cosmetic)
       try {
         if (cosmetic.profile_picture === undefined || cosmetic.profile_picture === null) {
           setShowUserInitials(true);
@@ -172,9 +172,9 @@ export function AccountDetailsForm(): React.JSX.Element {
 
       setDraftCosmetic(cosmetic);
       setBadgesSelected(cosmetic.displayed_badges);
-      setAvatarList(cosmetic.owns.filter(item => item.type == CosmeticType.Picture));
-      setBorderList(cosmetic.owns.filter(item => item.type == CosmeticType.Border));
-      setBannerList(cosmetic.owns.filter(item => item.type == CosmeticType.Banner));
+      setAvatarList(cosmetic.owns.filter(item => item.type === CosmeticType.Picture));
+      setBorderList(cosmetic.owns.filter(item => item.type === CosmeticType.Border));
+      setBannerList(cosmetic.owns.filter(item => item.type === CosmeticType.Banner));
       setBadgeList(await getUserAllBadgesByUser(eduquestUser.id.toString()));
     }
     else if (eduquestUser) {
@@ -225,7 +225,7 @@ export function AccountDetailsForm(): React.JSX.Element {
       
       let image: Cosmetic = emptyCosmetic;
 
-      if (fileImage != null) {
+      if (fileImage !== null) {
           image = fileImage;
           setShowUserInitials(false);
       }
@@ -242,7 +242,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
   const submitAvatarChange = async (): Promise<void> => {
     await updateUserCosmetic(draftCosmetic);
-    closeAvatarChange();
+    await closeAvatarChange();
   }
 
   // Handlers for Background Change Popover
@@ -269,8 +269,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
   const submitBackgroundChange = async (): Promise<void> => {
     await updateUserCosmetic(draftCosmetic);
-    setOpenBackground(false);
-    setAnchorEl(null);
+    await closeBackgroundChange();
   }
 
   // Handlers for Border Change Dialog
@@ -290,7 +289,7 @@ export function AccountDetailsForm(): React.JSX.Element {
       
       let image: Cosmetic = emptyCosmetic;
 
-      if (fileImage != null) {
+      if (fileImage !== null) {
           image = fileImage;
       }
 
@@ -303,7 +302,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
   const submitBorderChange = async (): Promise<void> => {
     await updateUserCosmetic(draftCosmetic);
-    closeBorderChange();
+    await closeBorderChange();
   }
 
   // Handlers for Banner Change Dialog
@@ -322,7 +321,7 @@ export function AccountDetailsForm(): React.JSX.Element {
       
       let image: Cosmetic = emptyCosmetic;
 
-      if (fileImage != null) {
+      if (fileImage !== null) {
           image = fileImage;
       }
 
@@ -335,7 +334,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
   const submitBannerChange = async (): Promise<void> => {
     await updateUserCosmetic(draftCosmetic);
-    closeBannerChange();
+    await closeBannerChange();
   }
 
   // Handlers for Badges Change Dialog
@@ -352,10 +351,10 @@ export function AccountDetailsForm(): React.JSX.Element {
       ...draftCosmetic,
       displayed_badges: badgesSelected
     });
-    closeBadgesChange();
+    await closeBadgesChange();
   }
 
-  const moveBadge = (from: number, to: number) => {
+  const moveBadge = (from: number, to: number): void => {
     setBadgesSelected((prev) => {
       const updated = [...prev];
       const [moved] = updated.splice(from, 1);
@@ -588,15 +587,15 @@ export function AccountDetailsForm(): React.JSX.Element {
 
               <Grid direction="row" container>
                 <Grid sm={4} xs={8}>
-	                <IconButton onClick={() => { updateAvatarChange(null); }} sx={(draftCosmetic.profile_picture?.image.name == null || draftCosmetic.profile_picture?.image.name == '') ? {backgroundColor : theme.palette.action.selected} : null}>
+	                <IconButton onClick={() => { updateAvatarChange(null); }} sx={(draftCosmetic.profile_picture?.image.name === null || draftCosmetic.profile_picture?.image.name === '') ? {backgroundColor : theme.palette.action.selected} : null}>
                     <UserAvatar {...userAvatarProps}/>
                   </IconButton>
                 </Grid>
 
                 {
                   avatarList.map((item: Cosmetic) => (
-                    <Grid key={item.type + item.id} sm={4} xs={8}>
-                      <IconButton key={item.type + item.id} onClick={() => { updateAvatarChange(item)  }} sx={(draftCosmetic.profile_picture?.image.name != null && item.image.id === draftCosmetic.profile_picture?.image?.id) ? {backgroundColor : theme.palette.action.selected} : null}>
+                    <Grid key={item.type.toString() + item.id.toString()} sm={4} xs={8}>
+                      <IconButton onClick={() => { updateAvatarChange(item)  }} sx={(draftCosmetic.profile_picture?.image.name !== null && item.image.id === draftCosmetic.profile_picture?.image?.id) ? {backgroundColor : theme.palette.action.selected} : null}>
                         <Avatar
                           alt={item.image.filename}
                           src={`/assets/${item.image.filename}`}
@@ -708,7 +707,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
               <Grid direction="row" container spacing={3}>
                 <Grid sm={4} xs={8}>
-                  <IconButton onClick={() => { updateBorderChange(null); }} sx={(draftCosmetic.profile_border?.image.name == null || draftCosmetic.profile_border?.image.name == '') ? {backgroundColor : theme.palette.action.selected} : null}>
+                  <IconButton onClick={() => { updateBorderChange(null); }} sx={(draftCosmetic.profile_border?.image.name === null || draftCosmetic.profile_border?.image.name === '') ? {backgroundColor : theme.palette.action.selected} : null}>
                     <Box
                       sx={{
                         position: 'relative',
@@ -726,8 +725,8 @@ export function AccountDetailsForm(): React.JSX.Element {
 
                 {
                   borderList?.map((item: Cosmetic) => (
-                    <Grid key={item.type + item.id} sm={4} xs={8}>
-                      <IconButton onClick={() => { updateBorderChange(item); }} sx={(draftCosmetic.profile_border?.image.name != null && draftCosmetic.profile_border?.image.id == item.image.id) ? {backgroundColor : theme.palette.action.selected} : null}>
+                    <Grid key={item.type.toString() + item.id.toString()} sm={4} xs={8}>
+                      <IconButton onClick={() => { updateBorderChange(item); }} sx={(draftCosmetic.profile_border?.image.name !== null && draftCosmetic.profile_border?.image.id === item.image.id) ? {backgroundColor : theme.palette.action.selected} : null}>
                         <Box
                           sx={{
                             position: 'relative',
@@ -828,7 +827,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
               <Grid direction="row" container spacing={3}>
                 <Grid xs={12} sm={6} md={5}>
-	                  <Button onClick={() => { updateBannerChange(null); }} sx={(draftCosmetic.banner?.image.name == null || draftCosmetic.banner?.image.name == '') ? {backgroundColor : theme.palette.action.selected} : null}>
+	                  <Button onClick={() => { updateBannerChange(null); }} sx={(draftCosmetic.banner?.image.name === null || draftCosmetic.banner?.image.name === '') ? {backgroundColor : theme.palette.action.selected} : null}>
 	                    <Grid 
 	                      direction="row"
                         sx={{
@@ -845,8 +844,8 @@ export function AccountDetailsForm(): React.JSX.Element {
 
                 {
                   bannerList?.map((item: Cosmetic) => (
-                    <Grid key={item.type + item.id} xs={12} sm={6} md={5}>
-                      <Button onClick={() => { updateBannerChange(item); }} sx={(draftCosmetic.banner?.image.name != null && draftCosmetic.banner?.image.id == item.image.id) ? {backgroundColor : theme.palette.action.selected} : null}>
+                    <Grid key={item.type.toString() + item.id.toString()} xs={12} sm={6} md={5}>
+                      <Button onClick={() => { updateBannerChange(item); }} sx={(draftCosmetic.banner?.image.name !== null && draftCosmetic.banner?.image.id === item.image.id) ? {backgroundColor : theme.palette.action.selected} : null}>
                         <Grid
 	                        direction="row" 
                           sx={{
@@ -892,7 +891,7 @@ export function AccountDetailsForm(): React.JSX.Element {
               >
                 {badgesSelected.map((badge, index) => (
                   <Box
-                    key={badge.id}
+                    key={badge.id.toString()}
                     draggable
                     onDragStart={() => {
                       dragItemIndex.current = index;
@@ -940,7 +939,7 @@ export function AccountDetailsForm(): React.JSX.Element {
               <Grid direction="row" container spacing={3}>
                 {
                   badgeList?.map((item) => (
-                    <Grid key={'Badge' + item.id} xs={12} sm={6} md={4}>
+                    <Grid key={'Badge' + item.id.toString()} xs={12} sm={6} md={4}>
                       <Button
                         key={item.id}
                         variant="text"

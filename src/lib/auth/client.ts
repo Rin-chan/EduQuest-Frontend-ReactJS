@@ -6,7 +6,6 @@ import { logger } from '@/lib/default-logger';
 import type { EduquestUser, EduquestUserCosmeticResult } from "@/types/eduquest-user";
 import { type AccountInfo } from "@azure/msal-browser";
 import { graphLoginRequest } from "@/app/msal/msal-config";
-import type { Badge } from '@/types/badge';
 import type { Image } from '@/types/image';
 import { CosmeticType, type Cosmetic } from '@/types/cosmetic';
 

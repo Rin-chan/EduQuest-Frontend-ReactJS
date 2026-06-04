@@ -1,5 +1,5 @@
-import { Badge } from "./badge";
-import { Cosmetic } from "./cosmetic";
+import type { Badge } from "./badge";
+import type { Cosmetic } from "./cosmetic";
 
 export interface UserGoals {
   id: number;

@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from 'react';
 import { useState } from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -7,7 +8,8 @@ import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 import {Button, Stack} from "@mui/material";
 import { StoreEnlarge } from './store-enlarge';
-import { Cosmetic, CosmeticType } from '@/types/cosmetic';
+import type { Cosmetic } from '@/types/cosmetic';
+import { CosmeticType } from '@/types/cosmetic';
 import { useUser } from '@/hooks/use-user';
 
 interface StoreCardProps {
@@ -36,7 +38,7 @@ export function StoreCard({ name, list }: StoreCardProps): React.JSX.Element {
                         list?.map((cosmeticItem: Cosmetic) => (
                             <Card key={cosmeticItem.id} sx={{ display: 'block', width: '17vw', minheight: '30vw', maxheight: '40vw', marginleft: 2, marginRight: 2, overflow: 'hidden', padding: 1 }}>
                                 {
-                                    name == CosmeticType.Picture ?
+                                    name.toString() === CosmeticType.Picture.toString() ?
                                     <CardMedia
                                         component="img"
                                         alt="Store item preview"
@@ -58,8 +60,8 @@ export function StoreCard({ name, list }: StoreCardProps): React.JSX.Element {
                                     <Button 
                                         variant="contained" 
                                         color="primary" sx={{ mt: 1 }} 
-                                        onClick={() => { handleBuy(cosmeticItem); }} 
-                                        disabled={cosmetic?.owns?.some((owned) => owned.id == cosmeticItem.id) ?? false}
+                                        onClick={() => {handleBuy(cosmeticItem)}}
+                                        disabled={cosmetic?.owns?.some((owned) => owned.id === cosmeticItem.id) ?? false}
                                         >
                                         Buy
                                     </Button>

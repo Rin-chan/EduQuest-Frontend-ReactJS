@@ -8,7 +8,8 @@ import { StoreCard } from '@/components/dashboard/store/store-card';
 import { TextField } from '@mui/material';
 import MenuItem from '@mui/material/MenuItem/MenuItem';
 import { getAllCosmetic } from '@/api/services/cosmetic';
-import { Cosmetic, CosmeticType } from '@/types/cosmetic';
+import type { Cosmetic } from '@/types/cosmetic';
+import { CosmeticType } from '@/types/cosmetic';
 
 export default function Page(): React.JSX.Element {
   const [sorting, setSorting] = useState<string>('latest');
@@ -18,6 +19,7 @@ export default function Page(): React.JSX.Element {
     getAllCosmetic().then((response) => {
       setList(response)
     })
+    .catch(() => { return; })
   }, [])
 
   const sortedList = useMemo(() => {
@@ -56,14 +58,14 @@ export default function Page(): React.JSX.Element {
         </TextField>
       </Stack>
 
-      <StoreCard name="Picture" list={sortedList ? sortedList.filter(function (cosmetic) {
-        return cosmetic.type == CosmeticType.Picture.toString();
+      <StoreCard name="Picture" list={sortedList ? sortedList.filter(function pictureFunc(cosmetic) {
+        return cosmetic.type === CosmeticType.Picture;
       }) : null}/>
-      <StoreCard name="Border" list={sortedList ? sortedList.filter(function (cosmetic) {
-        return cosmetic.type == CosmeticType.Border.toString();
+      <StoreCard name="Border" list={sortedList ? sortedList.filter(function borderFunc(cosmetic) {
+        return cosmetic.type === CosmeticType.Border;
       }) : null}/>
-      <StoreCard name="Banner" list={sortedList ? sortedList.filter(function (cosmetic) {
-        return cosmetic.type == CosmeticType.Banner.toString();
+      <StoreCard name="Banner" list={sortedList ? sortedList.filter(function bannerFunc(cosmetic) {
+        return cosmetic.type === CosmeticType.Banner;
       }) : null}/>
     </Stack>
   );
