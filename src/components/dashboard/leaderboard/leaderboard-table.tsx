@@ -9,7 +9,7 @@ import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Popover from '@mui/material/Popover/Popover';
-import { UserCourseGroupEnrollment } from '@/types/user-course-group-enrollment';
+import type { UserCourseGroupEnrollment } from '@/types/user-course-group-enrollment';
 import { getUserCourseGroupEnrollmentsByCourseGroup } from '@/api/services/user-course-group-enrollment';
 import {logger} from "@/lib/default-logger";
 import type { Course } from "@/types/course";
@@ -126,10 +126,10 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
 
                         const attempts = await Promise.all(
                             quests.map((quest) =>
-                            getUserQuestAttemptsByUserAndQuest(
-                                row.student_id.toString(),
-                                quest.id.toString()
-                            )
+                                getUserQuestAttemptsByUserAndQuest(
+                                    row.student_id.toString(),
+                                    quest.id.toString()
+                                )
                             )
                         );
 
