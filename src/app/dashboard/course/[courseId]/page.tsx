@@ -438,8 +438,6 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
 
           <br />
 
-          {/* Leaderboard */}
-          {/* Should not show if no leaderboard data is available */}
           {course ? 
           <Card>
             <CardHeader
@@ -558,6 +556,7 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
         <ImportDataForm
           open={showImportDataForm}
           setOpen={setShowImportDataForm}
+          courseGroupId={course.id.toString()}
         />
         : null
       }

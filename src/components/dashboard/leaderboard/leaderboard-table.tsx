@@ -23,6 +23,7 @@ import {User as UserIcon} from "@phosphor-icons/react/dist/ssr/User";
 import Stack from "@mui/material/Stack";
 import {getQuestsByCourseGroup} from '@/api/services/quest';
 import {getUserQuestAttemptsByUserAndQuest} from '@/api/services/user-quest-attempt';
+import {getTestScoresByCourseGroup, getUserTestScoresByTest} from '@/api/services/test-score';
 
 interface LeaderboardTableProps {
   course: Course;
@@ -89,13 +90,38 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
                         course.id.toString()
                     );
 
+                
+                const testScoresList = await getTestScoresByCourseGroup(course.id.toString());
+                const testWeightMap = Object.fromEntries(
+                    testScoresList.map((t) => [t.id, t.weightage ?? 0])
+                );
+                const allUserTestScores = await Promise.all(
+                    testScoresList.map(async (test) => {
+                        return await getUserTestScoresByTest(test.id.toString());
+                    })
+                );
+                const flattenedTestScores = allUserTestScores.flat();
+
+                const testScoreMap = flattenedTestScores.reduce((acc, item) => {
+                    const studentId = item.student.id;
+                    const testId = item.test.id;
+
+                    const weightage = testWeightMap[testId] ?? 0;
+
+                    const weightedScore = (item.score ?? 0) * (weightage / 100);
+
+                    acc[studentId] = (acc[studentId] ?? 0) + weightedScore;
+
+                    return acc;
+                }, {} as Record<number, number>);
+
                 const userDataEntries = await Promise.all(
                     enrollments
                         .filter((row) => row.student)
                         .map(async (row) => {
-                        const [user, cosmetic] = await Promise.all([
-                            getEduquestUser(row.student_id.toString()),
-                            getEduquestCosmeticDetail(row.student!.email),
+                            const [user, cosmetic] = await Promise.all([
+                                getEduquestUser(row.student_id.toString()),
+                                getEduquestCosmeticDetail(row.student!.email),
                         ]);
 
                         const attempts = await Promise.all(
@@ -107,21 +133,23 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
                             )
                         );
 
-                        const totalScore = attempts
+                        const attemptsTotalScore = attempts
                             .flat()
                             .reduce(
                             (sum, attempt) => sum + (attempt?.total_score_achieved ?? 0),
                             0
                             );
 
+                        const testScore = Math.floor(testScoreMap[row.student_id] ?? 0);
+
                         return {
                             student_id: row.student_id,
                             user,
                             cosmetic,
-                            score: totalScore,
+                            score: attemptsTotalScore + testScore,
                         };
-                        })
-                    );
+                    })
+                );
 
                 const sortedEntries = userDataEntries.sort((a, b) => b.score - a.score);
 
