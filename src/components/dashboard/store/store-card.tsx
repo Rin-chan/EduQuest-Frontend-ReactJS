@@ -36,7 +36,7 @@ export function StoreCard({ name, list }: StoreCardProps): React.JSX.Element {
                     <Stack direction="row">
                         {
                         list?.map((cosmeticItem: Cosmetic) => (
-                            <Card key={cosmeticItem.id} sx={{ display: 'block', width: '17vw', minheight: '30vw', maxheight: '40vw', marginleft: 2, marginRight: 2, overflow: 'hidden', padding: 1 }}>
+                            <Card key={cosmeticItem.id} sx={{ display: 'block', width: 260, minHeight: 320, marginleft: 2, marginRight: 2, overflow: 'hidden', padding: 1 }}>
                                 {
                                     name.toString() === CosmeticType.Picture.toString() ?
                                     <CardMedia

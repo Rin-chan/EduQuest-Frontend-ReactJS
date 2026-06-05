@@ -53,7 +53,7 @@ export function StoreEnlarge({cosmetic, open, setOpen}: StoreEnlargeProps): Reac
         <React.Fragment>
         {
             cosmetic ?
-                <Dialog open={open} onClose={handleClose}>
+                <Dialog open={open} onClose={handleClose} fullWidth>
                     <DialogTitle>
                         <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
                         <Typography noWrap variant="h2">{cosmetic.name}</Typography>
@@ -61,8 +61,13 @@ export function StoreEnlarge({cosmetic, open, setOpen}: StoreEnlargeProps): Reac
                         </Stack>
                     </DialogTitle>
 
-                    <DialogContent>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 2, minWidth: '60vw' }}>
+                    <DialogContent
+                        sx={{
+                            overflow: 'hidden',
+                            p: 2,
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '80vw', maxHeight: '80vh', overflow: 'hidden',}}>
                             {
                                 cosmetic.type === CosmeticType.Picture ?
                                 <Box
