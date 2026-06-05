@@ -17,6 +17,12 @@ import { AccountPopup } from '../account/account-popup';
 import { getEduquestUser, getEduquestCosmeticDetail } from '@/api/services/eduquest-user';
 import type { EduquestUser, EduquestUserCosmeticResult } from '@/types/eduquest-user';
 import {useTheme} from '@mui/material/styles';
+import {UserAvatar} from "@/components/auth/user-avatar";
+import Avatar from "@mui/material/Avatar";
+import {User as UserIcon} from "@phosphor-icons/react/dist/ssr/User";
+import Stack from "@mui/material/Stack";
+import {getQuestsByCourseGroup} from '@/api/services/quest';
+import {getUserQuestAttemptsByUserAndQuest} from '@/api/services/user-quest-attempt';
 
 interface LeaderboardTableProps {
   course: Course;
@@ -27,7 +33,7 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
     const [rows, setRows] = React.useState<UserCourseGroupEnrollment[]>([])
     const [selected, setSelected] = React.useState<number>(-1);
     const [page, setPage] = React.useState<number>(0);
-    const [rowsPerPage, setRowsPerPage] = React.useState<number>(2);
+    const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
     const [anchorElPosHorizontal, setAnchorElPosHorizontal] = React.useState<number>(0);
     const [anchorElPosVertical, setAnchorElPosVertical] = React.useState<number>(0);
 
@@ -37,8 +43,15 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
         Record<number, {
             user: EduquestUser;
             cosmetic: EduquestUserCosmeticResult | null;
+            score: number;
         }>
     >({});
+
+    function formatName(name: string | undefined): string {
+        if (!name) return '';
+        // Remove the starting and ending #
+        return name.replace(/^#|#$/g, '')
+    }
 
     const handleClick = (
         event: React.MouseEvent<unknown>,
@@ -71,26 +84,52 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
 
                 setRows(enrollments);
 
+                const quests = 
+                    await getQuestsByCourseGroup(
+                        course.id.toString()
+                    );
+
                 const userDataEntries = await Promise.all(
                     enrollments
                         .filter((row) => row.student)
                         .map(async (row) => {
-                            const [user, cosmetic] = await Promise.all([
-                                getEduquestUser(row.student_id.toString()),
-                                getEduquestCosmeticDetail(row.student!.email),
-                            ]);
+                        const [user, cosmetic] = await Promise.all([
+                            getEduquestUser(row.student_id.toString()),
+                            getEduquestCosmeticDetail(row.student!.email),
+                        ]);
 
-                            return [
-                                row.student_id,
-                                {
-                                    user,
-                                    cosmetic,
-                                },
-                            ] as const;
+                        const attempts = await Promise.all(
+                            quests.map((quest) =>
+                            getUserQuestAttemptsByUserAndQuest(
+                                row.student_id.toString(),
+                                quest.id.toString()
+                            )
+                            )
+                        );
+
+                        const totalScore = attempts
+                            .flat()
+                            .reduce(
+                            (sum, attempt) => sum + (attempt?.total_score_achieved ?? 0),
+                            0
+                            );
+
+                        return {
+                            student_id: row.student_id,
+                            user,
+                            cosmetic,
+                            score: totalScore,
+                        };
                         })
-                );
+                    );
 
-                setUserDataMap(Object.fromEntries(userDataEntries));
+                const sortedEntries = userDataEntries.sort((a, b) => b.score - a.score);
+
+                setUserDataMap(
+                    Object.fromEntries(
+                        sortedEntries.map((item) => [item.student_id, item])
+                    )
+                );
             } catch (error) {
                 logger.error("Failed to fetch data", error);
             }
@@ -98,6 +137,14 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
 
         fetchData().catch(() => { return; });
     }, [course.id]);
+
+    const sortedRows = React.useMemo(() => {
+        return [...rows].sort((a, b) => {
+            const scoreA = userDataMap[a.student_id]?.score ?? 0;
+            const scoreB = userDataMap[b.student_id]?.score ?? 0;
+            return scoreB - scoreA;
+        });
+    }, [rows, userDataMap]);
 
     const handleClose = (): void => {
         setSelected(-1);
@@ -114,21 +161,19 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
 
     const visibleRows = React.useMemo(
         () =>
-            [...rows].slice(
+            [...sortedRows].slice(
                 page * rowsPerPage,
                 page * rowsPerPage + rowsPerPage
             ),
-        [rows, page, rowsPerPage]
+        [sortedRows, page, rowsPerPage]
     );
 
   return (
     <Box>
 
-
         <Paper sx={{ width: '100%', mb: 2 }}>
             <TableContainer>
             <Table
-                sx={{ minWidth: '80vw' }}
                 aria-labelledby="tableTitle"
                 size="medium"
             >
@@ -156,8 +201,55 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
                              }}
                         >
                             <TableCell>{index + 1}</TableCell>
-                            <TableCell align="center">{row.student?.nickname}</TableCell>
-                            <TableCell align="right">{row.student?.email}</TableCell>
+                            <TableCell align="center">
+                                <Stack direction='row' alignItems='center'>
+                                    <Box
+                                        sx={{
+                                            position: 'relative',
+                                            width: 72,
+                                            height: 72,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            marginRight: 2
+                                        }}
+                                        >
+                                        {
+                                            userDataMap[row.student_id]?.cosmetic?.profile_border?.image.filename ?
+                                            <Box
+                                            component="img"
+                                            src={`/assets/${userDataMap[row.student_id]?.cosmetic?.profile_border.image.filename}`}
+                                            sx={{
+                                                position: 'absolute',
+                                                width: 72,
+                                                height: 72,
+                                                top: 0,
+                                                left: 0,
+                                                pointerEvents: 'none',
+                                                zIndex: 1,
+                                            }}
+                                            />
+                                            : null
+                                        }
+                    
+                                        {
+                                            userDataMap[row.student_id]?.cosmetic?.profile_picture === undefined || userDataMap[row.student_id]?.cosmetic?.profile_picture === null ?
+                                            <UserAvatar size='48px' {... {
+                                                name: formatName(userDataMap[row.student_id]?.user.nickname),
+                                                bgColor: 'var(--mui-palette-neutral-900)',
+                                                textColor: "white",
+                                            }}/>
+                                            : userDataMap[row.student_id]?.cosmetic?.profile_picture?.image?.filename ?
+                                            <Avatar
+                                                src={`/assets/${userDataMap[row.student_id]?.cosmetic?.profile_picture?.image.filename}`}
+                                                sx={{width: 48, height: 48}}
+                                            /> : <UserIcon size={32} color="var(--mui-palette-primary-main)" />
+                                        }
+                                    </Box>
+                                    {row.student?.nickname}
+                                </Stack>
+                            </TableCell>
+                            <TableCell align="right">{userDataMap[row.student_id]?.score.toString() ?? 0}</TableCell>
                         </TableRow>
                         );
                     })}
@@ -165,7 +257,7 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
             </Table>
             </TableContainer>
             <TablePagination
-                rowsPerPageOptions={[2, 5, 25]}
+                rowsPerPageOptions={[5, 10, 25]}
                 component="div"
                 count={rows.length}
                 rowsPerPage={rowsPerPage}
