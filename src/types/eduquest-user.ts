@@ -1,3 +1,6 @@
+import type { Badge } from "./badge";
+import type { Cosmetic } from "./cosmetic";
+
 export interface UserGoals {
   id: number;
   task: number;
@@ -45,4 +48,14 @@ export interface DailyCheckInResult {
 
 export interface CalendarDailyCheckInResult {
   checkin_dates: string[];
+}
+
+export interface EduquestUserCosmeticResult {
+  profile_picture: Cosmetic;
+  profile_background: string;
+  profile_border: Cosmetic;
+  banner: Cosmetic;
+  displayed_badges: Badge[];
+  about_me: string;
+  owns: Cosmetic[];
 }

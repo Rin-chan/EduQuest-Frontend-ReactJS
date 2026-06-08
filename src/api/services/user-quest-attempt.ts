@@ -17,8 +17,8 @@ export const getUserQuestAttempt = async (id: string): Promise<UserQuestAttempt>
   return response.data;
 }
 
-export const getUserQuestAttemptsByUserAndQuest = async (userId: string, questId: string): Promise<UserQuestAttempt[]> => {
-  const response = await apiService.get<UserQuestAttempt[]>(`/api/user-quest-attempts/by_user_quest/?user_id=${userId}&quest_id=${questId}`);
+export const getUserQuestAttemptsByUserAndQuest = async (userId: string, questId: string): Promise<UserQuestAttempt> => {
+  const response = await apiService.get<UserQuestAttempt>(`/api/user-quest-attempts/by_user_quest/?user_id=${userId}&quest_id=${questId}`);
   return response.data;
 }
 

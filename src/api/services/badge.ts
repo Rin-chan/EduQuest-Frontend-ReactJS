@@ -2,6 +2,7 @@ import apiService from "@/api/api-service";
 import type { Badge, BadgePayload, BadgeUpdatePayload } from "@/types/badge";
 import type { UserQuestBadge} from "@/types/user-quest-badge";
 import type { UserCourseBadge } from "@/types/user-course-badge";
+import type { UserOtherBadge } from '@/types/user-other-badge';
 
 export const getBadges = async (): Promise<Badge[]> => {
   const response = await apiService.get<Badge[]>('/api/badges/');
@@ -39,5 +40,20 @@ export const getUserCourseBadges = async (): Promise<UserCourseBadge[]> => {
 
 export const getUserCourseBadgesByUser = async (userId: string): Promise<UserCourseBadge[]> => {
   const response = await apiService.get<UserCourseBadge[]>(`/api/user-course-badges/by_user/?user_id=${userId}`);
+  return response.data;
+}
+
+export const getUserOtherBadges = async (): Promise<UserOtherBadge[]> => {
+  const response = await apiService.get<UserOtherBadge[]>('/api/user-other-badges/');
+  return response.data;
+}
+
+export const getUserOtherBadgesByUser = async (userId: string): Promise<UserOtherBadge[]> => {
+  const response = await apiService.get<UserOtherBadge[]>(`/api/user-other-badges/by_user/?user_id=${userId}`);
+  return response.data;
+}
+
+export const getUserAllBadgesByUser = async (userId: string): Promise<Badge[]> => {
+  const response = await apiService.get<Badge[]>(`/api/user-all-badges/by_user/?user_id=${userId}`);
   return response.data;
 }

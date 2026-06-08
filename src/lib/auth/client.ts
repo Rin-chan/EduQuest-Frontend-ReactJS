@@ -3,9 +3,11 @@
 import axios, { type AxiosResponse } from 'axios';
 import { handleLoginRedirect, handleLogout, getToken, msalInstance } from "@/app/msal/msal";
 import { logger } from '@/lib/default-logger';
-import type { EduquestUser } from "@/types/eduquest-user";
+import type { EduquestUser, EduquestUserCosmeticResult } from "@/types/eduquest-user";
 import { type AccountInfo } from "@azure/msal-browser";
-import { graphConfig, graphLoginRequest } from "@/app/msal/msal-config";
+import { graphLoginRequest } from "@/app/msal/msal-config";
+import type { Image } from '@/types/image';
+import { CosmeticType, type Cosmetic } from '@/types/cosmetic';
 
 const DEMO_AUTH_STORAGE_KEY = 'eduquest-demo-auth';
 
@@ -54,17 +56,16 @@ const authApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
 });
 
-// Set up the request interceptor to use MSAL's getToken method
+/**
+ * Set up the request interceptor to use MSAL's getToken method.
+ */
 authApi.interceptors.request.use(
   async (config) => {
-    // logger.debug('auth config.baseURL:', config.baseURL);
-    // logger.debug('auth env backend url:', process.env.NEXT_PUBLIC_BACKEND_URL);
     const token = getDemoAccessToken() ?? await getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
       logger.warn('MSAL: No access token available for Auth API request.');
-      // Optionally, you can handle the missing token scenario here
     }
     return config;
   },
@@ -114,12 +115,33 @@ class AuthClient {
     data: {
       user: AccountInfo | null;
       eduquestUser: EduquestUser | null;
-      avatar: string;
+      cosmetic: EduquestUserCosmeticResult | null;
     }
     error?: string
   }> {
     const demoAuth = getStoredDemoAuth();
     if (demoAuth) {
+      const emptyImage: Image = {
+        id: -1,
+        name: "",
+        filename: ""
+      }
+      const emptyCosmetic: Cosmetic = {
+        id: -1,
+        name: '',
+        type: CosmeticType.Picture,
+        image: emptyImage,
+        cost: 0
+      }
+      const demoCosmetic: EduquestUserCosmeticResult = {
+          profile_picture: emptyCosmetic,
+          profile_background: "",
+          profile_border: emptyCosmetic,
+          banner: emptyCosmetic,
+          displayed_badges: [],
+          about_me: "",
+          owns: []
+      }
       return {
         data: {
           user: {
@@ -131,7 +153,7 @@ class AuthClient {
             name: demoAuth.user.nickname,
           } as AccountInfo,
           eduquestUser: demoAuth.user,
-          avatar: ''
+          cosmetic: demoCosmetic
         }
       };
     }
@@ -143,7 +165,7 @@ class AuthClient {
         data: {
           user: null,
           eduquestUser: null,
-          avatar: ''
+          cosmetic: null
         }
       };
     }
@@ -160,7 +182,7 @@ class AuthClient {
         data: {
           user: null,
           eduquestUser: null,
-          avatar: ''
+          cosmetic: null
         },
         error: 'Please sign in with your NTU email account.'
       };
@@ -169,56 +191,57 @@ class AuthClient {
     // Get the EduquestUser profile
     const eduquestUser = await this.getEduquestUser(msalUser.username);
 
-    const avatar = await this.getUserPhotoAvatar();
-
     if (eduquestUser === null) {
       return {
         data: {
           user: null,
           eduquestUser: null,
-          avatar: ''
+          cosmetic: null
         },
         error: 'Failed to fetch user profile.'
       };
     }
 
+    const cosmetic = await this.getEduquestUserCosmetic(msalUser.username);
+
     // Return the user and eduquest user
-    return { data: { user: msalUser, eduquestUser, avatar } };
+    return { data: { user: msalUser, eduquestUser, cosmetic } };
   }
 
-  /**
+  /* 
+   * DEPRECATED. Replaced with software specific cosmetics
    * Acquires an access token for Microsoft Graph and fetches the user's photo.
+   * async getUserPhotoAvatar(): Promise<string> {
+   * try {
+   *  const accessToken = await this.getAccessTokenForGraph();
+   *
+   *   if (accessToken) {
+   *     const photoEndpoint = `${graphConfig.graphMeEndpoint}/photo/$value`;
+   *
+   *     const response = await fetch(photoEndpoint, {
+   *       method: "GET",
+   *        headers: {
+   *         "Authorization": `Bearer ${accessToken}`,
+   *       },
+   *     });
+   *     // If successful, this method returns a 200 OK response code and binary data of the requested photo.
+   *     // If no photo exists, the operation returns 404 Not Found.
+   *
+   *     if (response.status === 200) {
+   *       const blob = await response.blob();
+   *       return URL.createObjectURL(blob);
+   *     }
+   *     logger.error(`Failed to fetch blob from graph API: ${response.statusText}`);
+   *     return ''; // Return a fallback avatar URL or an empty string
+   *   }
+   *   logger.error('Failed to fetch access token for user photo.');
+   *   return ''; // Return a fallback avatar URL or an empty string
+   * } catch (error) {
+   *   logger.error('Failed to fetch user photo:', error);
+   *   return ''; // Return a fallback avatar URL or an empty string
+   * }
+   * }
    */
-  async getUserPhotoAvatar(): Promise<string> {
-    try {
-      const accessToken = await this.getAccessTokenForGraph();
-
-      if (accessToken) {
-        const photoEndpoint = `${graphConfig.graphMeEndpoint}/photo/$value`;
-
-        const response = await fetch(photoEndpoint, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${accessToken}`,
-          },
-        });
-        // If successful, this method returns a 200 OK response code and binary data of the requested photo.
-        // If no photo exists, the operation returns 404 Not Found.
-
-        if (response.status === 200) {
-          const blob = await response.blob();
-          return URL.createObjectURL(blob);
-        }
-        logger.error(`Failed to fetch blob from graph API: ${response.statusText}`);
-        return ''; // Return a fallback avatar URL or an empty string
-      }
-      logger.error('Failed to fetch access token for user photo.');
-      return ''; // Return a fallback avatar URL or an empty string
-    } catch (error) {
-      logger.error('Failed to fetch user photo:', error);
-      return ''; // Return a fallback avatar URL or an empty string
-    }
-  }
 
   /**
    * Acquires an access token specifically for Microsoft Graph API.
@@ -236,8 +259,6 @@ class AuthClient {
         ...graphLoginRequest,
         account: activeAccount,
       });
-      // test if response throw error
-      // throw new Error('test error');
       logger.debug("MSAL: Graph API token acquired silently.");
       return response.accessToken;
     } catch (error) {
@@ -257,6 +278,21 @@ class AuthClient {
       return response.data;
     } catch (error: unknown) {
       logger.error('Failed to fetch Eduquest User, redirecting to Login page:', error);
+      return null;
+    }
+  }
+
+  /** 
+   * Fetches the EduquestUser cosmetic based on the username.
+   */
+  async getEduquestUserCosmetic(username: string): Promise<EduquestUserCosmeticResult | null> {
+    try {
+      const response: AxiosResponse<EduquestUserCosmeticResult> = await authApi.get<EduquestUserCosmeticResult>(
+        `/api/eduquest-users/cosmetic_details/?email=${encodeURIComponent(username.toUpperCase())}`
+      );
+      return response.data;
+    } catch (error: unknown) {
+      logger.error('Failed to fetch Eduquest User Cosmetic', error);
       return null;
     }
   }

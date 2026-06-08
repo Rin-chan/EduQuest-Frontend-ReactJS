@@ -3,6 +3,7 @@ import type {
   CalendarDailyCheckInResult,
   DailyCheckInResult,
   EduquestUser,
+  EduquestUserCosmeticResult,
   EduquestUserUpdateForm,
   UserGoals,
 } from "@/types/eduquest-user";
@@ -45,5 +46,15 @@ export const getCalendarDailyCheckIn = async (id: number): Promise<CalendarDaily
 
 export const updateDailyGoals = async (dailyGoals: UserGoals[]): Promise<UserGoals[]> => {
   const response = await apiService.post<UserGoals[]>('/api/eduquest-users/update-daily-goals/', { daily_goals: dailyGoals });
+  return response.data;
+}
+
+export const getEduquestCosmeticDetail = async (email: string): Promise<EduquestUserCosmeticResult> => {
+  const response = await apiService.get<EduquestUserCosmeticResult>(`/api/eduquest-users/cosmetic_details/?email=${email}`);
+  return response.data;
+}
+
+export const updateUserCosmetic = async (cosmetic: EduquestUserCosmeticResult): Promise<EduquestUserCosmeticResult> => {
+  const response = await apiService.post<EduquestUserCosmeticResult>('/api/eduquest-users/update-cosmetic/', { cosmetic: cosmetic });
   return response.data;
 }

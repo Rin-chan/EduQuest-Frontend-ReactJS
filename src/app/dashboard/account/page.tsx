@@ -20,7 +20,7 @@ export default function Page(): React.JSX.Element {
         {/*<Grid lg={4} md={6} xs={12}>*/}
         {/*  <AccountInfo />*/}
         {/*</Grid>*/}
-        <Grid lg={8} md={6} xs={12}>
+        <Grid lg={12} md={14} xs={16}>
           <AccountDetailsForm />
         </Grid>
       </Grid>
