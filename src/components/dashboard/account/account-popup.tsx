@@ -12,6 +12,7 @@ import type { Badge } from '@/types/badge';
 import TextField from '@mui/material/TextField';
 import { updateUserCosmetic } from '@/api/services/eduquest-user';
 import Button from '@mui/material/Button';
+import {useTheme} from '@mui/material/styles';
 
 interface AccountPopupProps {
     eduquestUser: EduquestUser | null;
@@ -22,6 +23,7 @@ interface AccountPopupProps {
 }
 
 export function AccountPopup({eduquestUser, cosmetic, editable=false, draftCosmetic=null, setDraftCosmetic=null}: AccountPopupProps): React.JSX.Element {
+    const theme = useTheme();
     const [showUserInitials, setShowUserInitials] = React.useState<boolean>(false);
     const [userAvatarProps, setUserAvatarProps] = React.useState<UserAvatarProps>({
     name: '?',
@@ -144,7 +146,14 @@ export function AccountPopup({eduquestUser, cosmetic, editable=false, draftCosme
                         </Box>
 
                         <Stack direction="column" spacing={0} sx={{display: 'flex', paddingLeft: 3, justifyContent: 'center'}}>
-                            <Typography variant="h4">{eduquestUser?.nickname}</Typography>
+                            <Typography 
+                                variant="h5" 
+                                sx={{ textShadow: `
+                                    -1px -1px 2px ${theme.palette.background.default},
+                                    1px 1px 2px ${theme.palette.background.default}
+                                ` }}>
+                                    {eduquestUser?.nickname}
+                            </Typography>
                             <Stack direction="row" spacing={1} sx={{display: 'flex', alignItems: 'center'}}>
                                 {
                                     cosmetic?.displayed_badges.map((badge: Badge) => (

@@ -561,8 +561,8 @@ export function AccountDetailsForm(): React.JSX.Element {
               <Box
                 sx={{
                   position: 'relative',
-                  width: 64,
-                  height: 64,
+                  width: 184,
+                  height: 184,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -570,12 +570,12 @@ export function AccountDetailsForm(): React.JSX.Element {
               >
                 {
                   showUserInitials ?
-                    <UserAvatar size='48px' {...userAvatarProps}/>
+                    <UserAvatar size='128px' {...userAvatarProps}/>
                     : draftCosmetic.profile_picture?.image?.filename ?
                     <Avatar
                       src={`/assets/${draftCosmetic.profile_picture.image.filename}`}
-                      sx={{width: 48, height: 48}}
-                    /> : <UserIcon size={32} color="var(--mui-palette-primary-main)" />
+                      sx={{width: 128, height: 128}}
+                    /> : <UserIcon size={128} color="var(--mui-palette-primary-main)" />
                 }
               </Box>
             </CardContent>
@@ -588,7 +588,7 @@ export function AccountDetailsForm(): React.JSX.Element {
               <Grid direction="row" container>
                 <Grid sm={4} xs={8}>
 	                <IconButton onClick={() => { updateAvatarChange(null); }} sx={(draftCosmetic.profile_picture?.image.name === null || draftCosmetic.profile_picture?.image.name === '') ? {backgroundColor : theme.palette.action.selected} : null}>
-                    <UserAvatar {...userAvatarProps}/>
+                    <UserAvatar size='48px' {...userAvatarProps}/>
                   </IconButton>
                 </Grid>
 
@@ -599,6 +599,7 @@ export function AccountDetailsForm(): React.JSX.Element {
                         <Avatar
                           alt={item.image.filename}
                           src={`/assets/${item.image.filename}`}
+                          sx={{width: 48, height: 48}}
                         />
                       </IconButton>
                     </Grid>
@@ -663,8 +664,8 @@ export function AccountDetailsForm(): React.JSX.Element {
               <Box
                 sx={{
                   position: 'relative',
-                  width: 72,
-                  height: 72,
+                  width: 184,
+                  height: 184,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -677,8 +678,8 @@ export function AccountDetailsForm(): React.JSX.Element {
                     src={`/assets/${draftCosmetic.profile_border.image.filename}`}
                     sx={{
                       position: 'absolute',
-                      width: 72,
-                      height: 72,
+                      width: 184,
+                      height: 184,
                       top: 0,
                       left: 0,
                       pointerEvents: 'none',
@@ -690,12 +691,12 @@ export function AccountDetailsForm(): React.JSX.Element {
 
                 {
                   showUserInitials ?
-                    <UserAvatar size='48px' {...userAvatarProps}/>
+                    <UserAvatar size='128px' {...userAvatarProps}/>
                     : draftCosmetic.profile_picture?.image?.filename ?
                     <Avatar
                       src={`/assets/${draftCosmetic.profile_picture.image.filename}`}
-                      sx={{width: 48, height: 48}}
-                    /> : <UserIcon size={32} color="var(--mui-palette-primary-main)" />
+                      sx={{width: 128, height: 128}}
+                    /> : <UserIcon size={128} color="var(--mui-palette-primary-main)" />
                 }
               </Box>
             </CardContent>
@@ -788,7 +789,7 @@ export function AccountDetailsForm(): React.JSX.Element {
                       backgroundSize: 'cover', 
                       backgroundPosition: 'center', 
                       minHeight: '5em', 
-                      minWidth: '10em',
+                      minWidth: '15em',
                       border: '1px solid black'
                     }}
                     >
@@ -806,7 +807,14 @@ export function AccountDetailsForm(): React.JSX.Element {
                           </Box>
 
                           <Stack direction="column" spacing={0} sx={{display: 'flex', paddingLeft: 3, justifyContent: 'center'}}>
-                              <Typography variant="h5">{eduquestUser?.nickname}</Typography>
+                              <Typography 
+                                variant="h5"
+                                sx={{ textShadow: `
+                                    -1px -1px 2px ${theme.palette.background.default},
+                                    1px 1px 2px ${theme.palette.background.default}
+                                ` }}>
+                                  {eduquestUser?.nickname}
+                              </Typography>
                               <Stack direction="row" spacing={1} sx={{display: 'flex', alignItems: 'center'}}>
                                   <Box
                                     width={25}
@@ -826,7 +834,7 @@ export function AccountDetailsForm(): React.JSX.Element {
               <Typography variant="body1">Choose Banner</Typography>
 
               <Grid direction="row" container spacing={3}>
-                <Grid xs={12} sm={6} md={5}>
+                <Grid xs={12} sm={8} md={4}>
 	                  <Button onClick={() => { updateBannerChange(null); }} sx={(draftCosmetic.banner?.image.name === null || draftCosmetic.banner?.image.name === '') ? {backgroundColor : theme.palette.action.selected} : null}>
 	                    <Grid 
 	                      direction="row"
@@ -844,7 +852,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
                 {
                   bannerList?.map((item: Cosmetic) => (
-                    <Grid key={item.type.toString() + item.id.toString()} xs={12} sm={6} md={5}>
+                    <Grid key={item.type.toString() + item.id.toString()} xs={12} sm={8} md={4}>
                       <Button onClick={() => { updateBannerChange(item); }} sx={(draftCosmetic.banner?.image.name !== null && draftCosmetic.banner?.image.id === item.image.id) ? {backgroundColor : theme.palette.action.selected} : null}>
                         <Grid
 	                        direction="row" 

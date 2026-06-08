@@ -56,7 +56,7 @@ export function StoreEnlarge({cosmetic, open, setOpen}: StoreEnlargeProps): Reac
                 <Dialog open={open} onClose={handleClose} fullWidth>
                     <DialogTitle>
                         <Stack direction="row" sx={{ alignContent: 'space-between', justifyContent: 'space-between' }}>
-                        <Typography noWrap variant="h2">{cosmetic.name}</Typography>
+                        <Typography noWrap variant="h4">{cosmetic.name}</Typography>
                         <Button startIcon={<X fontSize="var(--icon-fontSize-md)" />} onClick={handleClose} />
                         </Stack>
                     </DialogTitle>
