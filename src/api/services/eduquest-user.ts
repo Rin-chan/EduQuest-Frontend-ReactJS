@@ -1,8 +1,11 @@
 import apiService from "@/api/api-service";
 import type {
+  CalendarDailyCheckInResult,
   DailyCheckInResult,
   EduquestUser,
-  EduquestUserUpdateForm
+  EduquestUserCosmeticResult,
+  EduquestUserUpdateForm,
+  UserGoals,
 } from "@/types/eduquest-user";
 
 
@@ -33,5 +36,25 @@ export const updateEduquestUser = async (id: string, eduquestUserUpdateForm: Edu
 
 export const dailyCheckIn = async (): Promise<DailyCheckInResult> => {
   const response = await apiService.post<DailyCheckInResult>('/api/eduquest-users/daily-check-in/');
+  return response.data;
+}
+
+export const getCalendarDailyCheckIn = async (id: number): Promise<CalendarDailyCheckInResult> => {
+  const response = await apiService.get<CalendarDailyCheckInResult>(`/api/eduquest-users/calendar-daily-check-in/?id=${id.toString()}`);
+  return response.data;
+}
+
+export const updateDailyGoals = async (dailyGoals: UserGoals[]): Promise<UserGoals[]> => {
+  const response = await apiService.post<UserGoals[]>('/api/eduquest-users/update-daily-goals/', { daily_goals: dailyGoals });
+  return response.data;
+}
+
+export const getEduquestCosmeticDetail = async (email: string): Promise<EduquestUserCosmeticResult> => {
+  const response = await apiService.get<EduquestUserCosmeticResult>(`/api/eduquest-users/cosmetic_details/?email=${email}`);
+  return response.data;
+}
+
+export const updateUserCosmetic = async (cosmetic: EduquestUserCosmeticResult): Promise<EduquestUserCosmeticResult> => {
+  const response = await apiService.post<EduquestUserCosmeticResult>('/api/eduquest-users/update-cosmetic/', { cosmetic: cosmetic });
   return response.data;
 }

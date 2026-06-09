@@ -99,3 +99,16 @@ Built using the Next.js framework (React-based), the frontend is highly responsi
     npm run dev
     ```
 
+## Image Credits
+Frame: https://bdragon1727.itch.io/pixel-avatar-frame-all
+Frame: ttps://bdragon1727.itch.io/custom-border-and-panels-menu-all-part
+Avatar: https://toffeecraft.itch.io/cat-mega-bundle
+Avatar: https://caz-bee.itch.io/cute-shroom-2-character-sprite
+Avatar: https://caz-bee.itch.io/skeleton
+Avatar: https://caz-bee.itch.io/ducky-3
+Avatar: https://sakpix.itch.io/cozy-caf-portrait-collection-pixel-mega-pack
+Avatar: https://sakpix.itch.io/dark-wizard-academy-gothic-portrait-collection
+Banner: https://unicorncreates.itch.io/sky-backgrounds
+Banner: https://free-game-assets.itch.io/free-vampires-locations-battle-background-pack
+Banner: https://free-game-assets.itch.io/free-forest-battle-backgrounds
+Banner: https://lisadikaprio.itch.io/4-expression-backgrounds

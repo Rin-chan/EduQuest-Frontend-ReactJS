@@ -17,6 +17,7 @@ import {MobileNav} from './mobile-nav';
 import {UserPopover} from './user-popover';
 import { LinearProgressForLevel, } from "@/components/dashboard/misc/linear-progress-with-label";
 import {User as UserIcon} from "@phosphor-icons/react/dist/ssr/User";
+import { dailyCheckIn } from '@/api/services/eduquest-user';
 
 export function MainNav(): React.JSX.Element {
   const [openNav, setOpenNav] = React.useState<boolean>(false);
@@ -26,7 +27,7 @@ export function MainNav(): React.JSX.Element {
   const [userAvatarProps, setUserAvatarProps] = React.useState<UserAvatarProps>({
     name: '?',
   });
-  const { eduquestUser, avatar } = useUser();
+  const { eduquestUser, cosmetic } = useUser();
   const { mode, setMode } = useColorScheme();
 
 
@@ -38,10 +39,9 @@ export function MainNav(): React.JSX.Element {
   }
 
   const setUserPhotoAvatar = React.useCallback(async (): Promise<void> => {
-    if (eduquestUser) {
+    if (eduquestUser && cosmetic) {
       try {
-        logger.debug("User Avatar: ", avatar);
-        if (avatar === '') {
+        if (cosmetic.profile_picture === undefined || cosmetic.profile_picture === null) {
           setShowUserInitials(true);
           setUserAvatarProps({
             name: formatName(eduquestUser.nickname),
@@ -49,7 +49,7 @@ export function MainNav(): React.JSX.Element {
             textColor: "white",
           });
         } else {
-          setUserPhoto(avatar);
+          setUserPhoto(`/assets/${cosmetic.profile_picture.image.filename}`);
           setShowUserInitials(false);
         }
       } catch (error) {
@@ -62,7 +62,15 @@ export function MainNav(): React.JSX.Element {
         logger.error('Error fetching user photo: ', error)
       }
     }
-  }, [avatar, eduquestUser]);
+    else if (eduquestUser) {
+      setShowUserInitials(true);
+      setUserAvatarProps({
+        name: formatName(eduquestUser.nickname),
+        bgColor: 'var(--mui-palette-neutral-900)',
+        textColor: "white",
+      });
+    }
+  }, [cosmetic, eduquestUser]);
 
   // React.useEffect(() => {
   //   const fetchData = async (): Promise<void> => {
@@ -81,6 +89,26 @@ export function MainNav(): React.JSX.Element {
       logger.error('Failed to fetch data', error);
     });
   }, [setUserPhotoAvatar])
+
+  React.useEffect(() => {
+    if (eduquestUser) {
+      try {
+        const fetchCheckInStatus = async (): Promise<void> => {
+          await dailyCheckIn();
+        };
+
+        fetchCheckInStatus().catch((error: unknown) => {
+          logger.error('Failed to fetch daily check-in status', error);
+        });
+
+        const intervalId = setInterval(fetchCheckInStatus, 300000); // Fetch data every 5 minutes
+
+        return () => { clearInterval(intervalId); }; // Clear interval on component unmount
+      } catch (error: unknown) {
+        logger.error('Daily check-in failed', error);
+      }
+    }
+  }, [eduquestUser]);
 
   return (
     <React.Fragment>
@@ -127,7 +155,7 @@ export function MainNav(): React.JSX.Element {
                 sx={{ width: '200px' }}
                 value={eduquestUser.total_points % 100}
                 level={`Level ${(Math.floor(eduquestUser.total_points / 100) + 1).toString()}`}
-                absValue={eduquestUser.total_points}
+                absValue={eduquestUser.current_points}
               />
               : null}
 

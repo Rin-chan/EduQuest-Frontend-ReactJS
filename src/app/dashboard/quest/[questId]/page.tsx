@@ -46,6 +46,7 @@ import Box from "@mui/material/Box";
 import {SkeletonAnswerAttemptCard} from "@/components/dashboard/skeleton/skeleton-answer-attempt-card";
 import {generateFeedbackFromMicroservice, getStudentFeedbackByAttempt, saveStudentFeedback} from "@/api/services/student-feedback";
 import type {StudentFeedback} from "@/types/student-feedback";
+import {LeaderboardTableQuest} from  "@/components/dashboard/leaderboard/leaderboard-table-quest";
 
 
 export default function Page({ params }: { params: { questId: string } }) : React.JSX.Element {
@@ -618,6 +619,21 @@ export default function Page({ params }: { params: { questId: string } }) : Reac
           onStatusChange={handleStatusChange}
         />
       ) : null}
+
+      {
+        quest && quest.type != 'Private' ?
+        <Card sx={{ mt: 5}}>
+            <CardHeader
+              title="Leaderboard"
+              subheader="Ranking for this quest"
+            />
+        
+            <CardContent sx={{pb: '16px'}}>
+              <LeaderboardTableQuest quest={quest} />
+            </CardContent>
+        </Card>
+        : null
+      }
 
       {submitStatus ? <Alert severity={submitStatus.type} sx={{marginTop: 2}}>
         {submitStatus.message}

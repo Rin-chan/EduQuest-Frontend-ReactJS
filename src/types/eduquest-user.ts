@@ -1,3 +1,13 @@
+import type { Badge } from "./badge";
+import type { Cosmetic } from "./cosmetic";
+
+export interface UserGoals {
+  id: number;
+  task: number;
+  complete: number;
+  target: number;
+}
+
 export interface EduquestUser extends EduquestUserSummary {
   first_name: string;
   last_name: string;
@@ -8,9 +18,11 @@ export interface EduquestUser extends EduquestUserSummary {
   is_active: boolean;
   is_staff: boolean;
   total_points: number;
+  current_points: number;
   daily_checkin_streak: number;
   daily_checkin_longest_streak: number;
   daily_checkin_last_date: string | null;
+  daily_goals: UserGoals[];
 }
 
 export interface EduquestUserSummary {
@@ -31,4 +43,19 @@ export interface DailyCheckInResult {
   current_streak: number;
   longest_streak: number;
   total_points: number;
+  current_points: number;
+}
+
+export interface CalendarDailyCheckInResult {
+  checkin_dates: string[];
+}
+
+export interface EduquestUserCosmeticResult {
+  profile_picture: Cosmetic;
+  profile_background: string;
+  profile_border: Cosmetic;
+  banner: Cosmetic;
+  displayed_badges: Badge[];
+  about_me: string;
+  owns: Cosmetic[];
 }

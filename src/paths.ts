@@ -2,10 +2,12 @@ export const paths = {
   home: '/',
   auth: {
     signIn: '/auth/sign-in',
+    demoSignIn: '/auth/demo-sign-in',
   },
   dashboard: {
     overview: '/dashboard',
     account: '/dashboard/account',
+    goals: '/dashboard/account/goals',
     // customers: '/dashboard/customers',
     user: '/dashboard/eduquest-user',
     // integrations: '/dashboard/integrations',
@@ -31,7 +33,8 @@ export const paths = {
       student: '/dashboard/insights/student',
       course: '/dashboard/insights/course',
     },
-    feedback: '/dashboard/feedback'
+    feedback: '/dashboard/feedback',
+    store: '/dashboard/store',
   },
   errors: {
     notFound: '/errors/not-found',

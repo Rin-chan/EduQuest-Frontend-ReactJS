@@ -12,6 +12,7 @@ import { useTheme } from '@mui/material/styles';
 // import { GearSix as GearSixIcon } from '@phosphor-icons/react/dist/ssr/GearSix';
 import { SignOut as SignOutIcon } from '@phosphor-icons/react/dist/ssr/SignOut';
 import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
+import { Lightbulb as LightbulbIcon } from '@phosphor-icons/react/dist/ssr/Lightbulb';
 
 import { paths } from '@/paths';
 import { authClient } from '@/lib/auth/client';
@@ -96,6 +97,12 @@ export function UserPopover({ anchorEl, onClose, open }: UserPopoverProps): Reac
         {/*  </ListItemIcon>*/}
         {/*  Settings*/}
         {/*</MenuItem>*/}
+        <MenuItem component={RouterLink} href={paths.dashboard.goals} onClick={onClose}>
+          <ListItemIcon>
+            <LightbulbIcon fontSize="var(--icon-fontSize-md)" />
+          </ListItemIcon>
+          Goals
+        </MenuItem>
         <MenuItem component={RouterLink} href={paths.dashboard.account} onClick={onClose}>
           <ListItemIcon>
             <UserIcon fontSize="var(--icon-fontSize-md)" />
