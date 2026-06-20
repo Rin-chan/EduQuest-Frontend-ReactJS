@@ -12,6 +12,7 @@ import ExpertBadge from "../../../../public/assets/expert_badge.svg";
 import ListItemText from "@mui/material/ListItemText";
 import SpeedsterBadge from "../../../../public/assets/speedster_badge.svg";
 import CompletionistBadge from "../../../../public/assets/completionist_badge.svg";
+import TopRankerBadge from "../../../../public/assets/top_ranker_badge.svg";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import {XCircle as XCircleIcon} from "@phosphor-icons/react/dist/ssr/XCircle";
@@ -77,6 +78,14 @@ export function CourseExpiresDialog({ course, openDialog, handleDialogClose, han
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText primary="Speedster Badge" secondary="Awarded to the user with the fastest attempt for any quest under this course." />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemAvatar>
+                      <Avatar sx={{ backgroundColor: 'transparent', height: '100%' }} variant="square">
+                        <TopRankerBadge height={46}/>
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText primary="Top Ranker Badge" secondary="Awarded to the user with the highest score on the leaderboard under this course." />
                   </ListItem>
                 </List>
               </Box>
