@@ -17,8 +17,10 @@ import TabPanel from '@mui/lab/TabPanel';
 import Box from '@mui/material/Box';
 import {CourseBadgeCard} from "@/components/dashboard/badge/course-badge-card";
 import {QuestBadgeCard} from "@/components/dashboard/badge/quest-badge-card";
+import {OtherBadgeCard} from "@/components/dashboard/badge/other-badge-card";
 import { SkeletonBadgeCard } from '@/components/dashboard/skeleton/skeleton-badge-card';
-import {getUserCourseBadgesByUser, getUserQuestBadgesByUser} from "@/api/services/badge";
+import {getUserCourseBadgesByUser, getUserQuestBadgesByUser, getUserOtherBadgesByUser} from "@/api/services/badge";
+import type { UserOtherBadge } from '@/types/user-other-badge';
 
 
 
@@ -26,9 +28,11 @@ export default function Page(): React.JSX.Element {
   const { eduquestUser } = useUser();
   const [courseBadges, setCourseBadges] = React.useState<UserCourseBadge[]>([]);
   const [questBadges, setQuestBadges] = React.useState<UserQuestBadge[]>([]);
+  const [otherBadges, setOtherBadges] = React.useState<UserOtherBadge[]>([]);
   const [value, setValue] = React.useState('1');
   const [loadingCourseBadges, setLoadingCourseBadges] = React.useState(true);
   const [loadingQuestBadges, setLoadingQuestBadges] = React.useState(true);
+  const [loadingOtherBadges, setLoadingOtherBadges] = React.useState(true);
 
 
   const handleChange = (event: React.SyntheticEvent, newValue: string): void => {
@@ -61,10 +65,24 @@ export default function Page(): React.JSX.Element {
     }
   }, [eduquestUser]);
 
+  const fetchMyOtherBadges = React.useCallback(async (): Promise<void> => {
+    if (eduquestUser) {
+      try {
+        const response = await getUserOtherBadgesByUser(eduquestUser.id.toString());
+        setOtherBadges(response);
+      } catch (error: unknown) {
+        logger.error('Failed to fetch quest badges', error);
+      } finally {
+        setLoadingOtherBadges(false);
+      }
+    }
+  }, [eduquestUser]);
+
   React.useEffect(() => {
     const fetchData = async (): Promise<void> => {
       await fetchMyCourseBadges();
       await fetchMyQuestBadges();
+      await fetchMyOtherBadges();
     };
 
     fetchData().catch((error: unknown) => {
@@ -90,6 +108,7 @@ export default function Page(): React.JSX.Element {
             <TabList onChange={handleChange} aria-label="lab API tabs example" >
               <Tab label="From Courses" value="1" sx={{px:2}}/>
               <Tab label="From Quests" value="2" sx={{px:2}}/>
+              <Tab label="From Others" value="3" sx={{px:2}}/>
             </TabList>
           </Box>
           <TabPanel value="1">
@@ -122,6 +141,24 @@ export default function Page(): React.JSX.Element {
                   endIcon={<CaretRightIcon/>}
                   component={RouterLink}
                   href={paths.dashboard.quest.all}
+                  sx={{mt:2}}
+                  variant="outlined">Browse Quests</Button>
+              </Box>
+              )
+            }
+          </TabPanel>
+          <TabPanel value="3">
+            { loadingOtherBadges ? <SkeletonBadgeCard/>
+              :
+              ( otherBadges.length > 0 ?
+              <OtherBadgeCard otherBadges={otherBadges}/>
+              :
+              <Box>
+                <Typography variant="body2">No badges earned from any quests yet.</Typography>
+                <Button
+                  endIcon={<CaretRightIcon/>}
+                  component={RouterLink}
+                  href={paths.dashboard.goals}
                   sx={{mt:2}}
                   variant="outlined">Browse Quests</Button>
               </Box>
