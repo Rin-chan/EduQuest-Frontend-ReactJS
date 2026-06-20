@@ -1,8 +1,9 @@
 import apiService from '@/api/api-service';
 import microService from '@/api/micro-service';
-import { getUserAnswerAttemptByUserQuestAttempt } from '@/api/services/user-answer-attempt';
+import { getUserAnswerAttemptByUserQuestAttempt, getUserShortAnswerAttemptByUserQuestAttempt } from '@/api/services/user-answer-attempt';
 import type { StudentFeedback } from '@/types/student-feedback';
-import type { UserAnswerAttempt } from '@/types/user-answer-attempt';
+import type { UserAnswerAttempt, UserShortAnswerAttempt } from '@/types/user-answer-attempt';
+import { getQuestionsByQuest } from '@/api/services/question';
 
 export const getStudentFeedbackByAttempt = async (attemptId: string): Promise<StudentFeedback | null> => {
   const response = await apiService.get<StudentFeedback | Record<string, never>>(
@@ -53,11 +54,24 @@ interface AttemptPayload {
   }[];
 }
 
-const buildAttemptPayload = (attemptId: string, userId: number, answerAttempts: UserAnswerAttempt[]): AttemptPayload => {
+interface ShortAnsAttemptPayload {
+  student_id: number;
+  quest_id: number;
+  answers: {
+    question_id: number;
+    question_text: string;
+    cognitive_level: string;
+    topic: string;
+    answer: string;
+    score_achieved: number;
+    explanation: string;
+  }[];
+}
+
+const buildAttemptPayload = (attemptId: string, userId: number, answerAttempts: UserAnswerAttempt[], questId: number): AttemptPayload => {
   if (!answerAttempts.length) {
     throw new Error('No answers found for this attempt.');
   }
-  const questId = answerAttempts[0].question.quest_id;
   const answers = answerAttempts.map((attempt) => {
     const question = attempt.question;
     const questionMeta = question as unknown as { cognitive_level?: string; topic?: string };
@@ -83,11 +97,45 @@ const buildAttemptPayload = (attemptId: string, userId: number, answerAttempts: 
   };
 };
 
-export const generateFeedbackFromMicroservice = async (attemptId: string, userId: number): Promise<FeedbackPayload> => {
-  const answerAttempts = await getUserAnswerAttemptByUserQuestAttempt(attemptId);
-  const payload = buildAttemptPayload(attemptId, userId, answerAttempts);
-  const response = await microService.post<FeedbackPayload>('/generate_feedback', payload);
-  return response.data;
+const buildShortAnsAttemptPayload = (attemptId: string, userId: number, answerAttempts: UserShortAnswerAttempt[], questId: number): ShortAnsAttemptPayload => {
+  if (!answerAttempts.length) {
+    throw new Error('No answers found for this attempt.');
+  }
+  const answers = answerAttempts.map((attempt) => {
+    const question = attempt.question;
+    const questionMeta = question as unknown as { cognitive_level?: string; topic?: string };
+    return {
+      question_id: question.id,
+      question_text: question.text,
+      cognitive_level: questionMeta.cognitive_level ?? 'Understand',
+      topic: questionMeta.topic ?? 'General',
+      answer: attempt.text,
+      score_achieved: attempt.score_achieved,
+      explanation: attempt.unstructuredanswer.reason ?? ''
+    };
+  });
+
+  return {
+    student_id: userId,
+    quest_id: questId,
+    answers
+  };
+};
+
+export const generateFeedbackFromMicroservice = async (attemptId: string, userId: number, questId: number): Promise<FeedbackPayload> => {
+  const question = await getQuestionsByQuest(questId.toString());
+  if (question && (question[0].question_type === 'short_ans' || question[0].question_type === 'latex_short_ans')) {
+    const answerAttempts = await getUserShortAnswerAttemptByUserQuestAttempt(attemptId);
+    const payload = buildShortAnsAttemptPayload(attemptId, userId, answerAttempts, questId);
+    const response = await microService.post<FeedbackPayload>('/generate_shortans_feedback', payload);
+    return response.data;
+  }
+  else {
+    const answerAttempts = await getUserAnswerAttemptByUserQuestAttempt(attemptId);
+    const payload = buildAttemptPayload(attemptId, userId, answerAttempts, questId);
+    const response = await microService.post<FeedbackPayload>('/generate_feedback', payload);
+    return response.data;
+  }
 };
 
 export const saveStudentFeedback = async (attemptId: string, feedback: FeedbackPayload): Promise<StudentFeedback> => {

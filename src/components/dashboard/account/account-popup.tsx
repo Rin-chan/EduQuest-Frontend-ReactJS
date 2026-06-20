@@ -93,9 +93,9 @@ export function AccountPopup({eduquestUser, cosmetic, editable=false, draftCosme
             <Stack
                 divider={
                     <Box
-                        sx={(theme) => ({
+                        sx={(themeStyle) => ({
                         border: '1px solid #000000',
-                        ...theme.applyStyles('dark', {
+                        ...themeStyle.applyStyles('dark', {
                             border: '1px solid #000000',
                         }),
                         })}

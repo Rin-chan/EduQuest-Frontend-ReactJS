@@ -57,7 +57,7 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
     const handleClick = (
         event: React.MouseEvent<unknown>,
         row: UserCourseGroupEnrollment
-    ) => {
+    ): void => {
         if (selected === row.student_id) {
             setSelected(-1);
             return;
@@ -102,7 +102,7 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
                 );
                 const flattenedTestScores = allUserTestScores.flat();
 
-                const testScoreMap = flattenedTestScores.reduce((acc, item) => {
+                const testScoreMap = flattenedTestScores.reduce<Record<number, number>>((acc, item) => {
                     const studentId = item.student.id;
                     const testId = item.test.id;
 
@@ -113,7 +113,7 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
                     acc[studentId] = (acc[studentId] ?? 0) + weightedScore;
 
                     return acc;
-                }, {} as Record<number, number>);
+                }, {});
 
                 const userDataEntries = await Promise.all(
                     enrollments
@@ -166,7 +166,8 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
         fetchData().catch(() => { return; });
     }, [course.id]);
 
-    const sortedRows = React.useMemo(() => {
+    const sortedRows = React.useMemo(
+        () => {
         return [...rows].sort((a, b) => {
             const scoreA = userDataMap[a.student_id]?.score ?? 0;
             const scoreB = userDataMap[b.student_id]?.score ?? 0;
@@ -246,7 +247,7 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
                                             userDataMap[row.student_id]?.cosmetic?.profile_border?.image.filename ?
                                             <Box
                                             component="img"
-                                            src={`/assets/${userDataMap[row.student_id]?.cosmetic?.profile_border.image.filename}`}
+                                            src={`/assets/${userDataMap[row.student_id]?.cosmetic?.profile_border.image.filename ?? ''}`}
                                             sx={{
                                                 position: 'absolute',
                                                 width: 72,
@@ -269,7 +270,7 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
                                             }}/>
                                             : userDataMap[row.student_id]?.cosmetic?.profile_picture?.image?.filename ?
                                             <Avatar
-                                                src={`/assets/${userDataMap[row.student_id]?.cosmetic?.profile_picture?.image.filename}`}
+                                                src={`/assets/${userDataMap[row.student_id]?.cosmetic?.profile_picture?.image.filename ?? ''}`}
                                                 sx={{width: 48, height: 48}}
                                             /> : <UserIcon size={32} color="var(--mui-palette-primary-main)" />
                                         }

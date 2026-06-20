@@ -27,7 +27,7 @@ interface ImportDataFormProps {
 export function ImportDataForm({open, setOpen, courseGroupId}: ImportDataFormProps): React.JSX.Element {
     const { eduquestUser} = useUser();
     const theme = useTheme();
-    const [name, setName] = React.useState<String>('');
+    const [name, setName] = React.useState<string>('');
     const [file, setFile] = React.useState<File | null>(null);
     const [weightage, setWeightage] = React.useState<number>(100);
 

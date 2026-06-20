@@ -438,7 +438,7 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
 
           <br />
 
-          {course && course.code != 'PRIVATE' ? 
+          {course && course.code !== 'PRIVATE' ? 
           <Card>
             <CardHeader
               title="Leaderboard"

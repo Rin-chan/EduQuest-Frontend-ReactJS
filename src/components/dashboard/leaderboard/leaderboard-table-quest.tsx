@@ -20,8 +20,6 @@ import {UserAvatar} from "@/components/auth/user-avatar";
 import Avatar from "@mui/material/Avatar";
 import {User as UserIcon} from "@phosphor-icons/react/dist/ssr/User";
 import Stack from "@mui/material/Stack";
-import {getQuestsByCourseGroup} from '@/api/services/quest';
-import {getUserQuestAttemptsByUserAndQuest} from '@/api/services/user-quest-attempt';
 import type { UserQuestAttempt } from '@/types/user-quest-attempt';
 
 interface LeaderboardTableQuestProps {
@@ -199,7 +197,7 @@ export function LeaderboardTableQuest({ quest }: LeaderboardTableQuestProps): Re
                                                 userDataMap[row.student_id]?.cosmetic?.profile_border?.image.filename ?
                                                 <Box
                                                 component="img"
-                                                src={`/assets/${userDataMap[row.student_id]?.cosmetic?.profile_border.image.filename}`}
+                                                src={`/assets/${userDataMap[row.student_id]?.cosmetic?.profile_border.image.filename ?? ''}`}
                                                 sx={{
                                                     position: 'absolute',
                                                     width: 72,
@@ -222,7 +220,7 @@ export function LeaderboardTableQuest({ quest }: LeaderboardTableQuestProps): Re
                                                 }}/>
                                                 : userDataMap[row.student_id]?.cosmetic?.profile_picture?.image?.filename ?
                                                 <Avatar
-                                                    src={`/assets/${userDataMap[row.student_id]?.cosmetic?.profile_picture?.image.filename}`}
+                                                    src={`/assets/${userDataMap[row.student_id]?.cosmetic?.profile_picture?.image.filename ?? ''}`}
                                                     sx={{width: 48, height: 48}}
                                                 /> : <UserIcon size={32} color="var(--mui-palette-primary-main)" />
                                             }
