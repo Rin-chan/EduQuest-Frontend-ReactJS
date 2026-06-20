@@ -37,7 +37,7 @@ import Points from "../../../../../public/assets/point.svg";
 import {getQuest, updateQuest} from "@/api/services/quest";
 import {getUserCourseGroupEnrollmentsByCourseAndUser} from "@/api/services/user-course-group-enrollment";
 import {type UserCourseGroupEnrollment} from "@/types/user-course-group-enrollment";
-import {createUserQuestAttempt, getUserQuestAttemptsByUserAndQuest} from "@/api/services/user-quest-attempt";
+import {createUserQuestAttempt, getUserQuestAttemptsByUserAndQuest, getUserQuestAttempt} from "@/api/services/user-quest-attempt";
 import {User as UserIcon} from "@phosphor-icons/react/dist/ssr/User";
 import {getUserAnswerAttemptByUserQuestAttempt, getUserShortAnswerAttemptByUserQuestAttempt} from "@/api/services/user-answer-attempt";
 import type {UserAnswerAttempt, UserShortAnswerAttempt} from "@/types/user-answer-attempt";
@@ -106,7 +106,37 @@ export default function Page({ params }: { params: { questId: string } }) : Reac
     setFeedbackStatus('loading');
     // Refresh the quest attempts table
     await fetchMyQuestAttempts();
-    toggleAnswerAttemptMode()
+
+    // Poll the server for the updated score (calculate_score runs asynchronously via Celery).
+    try {
+      const maxAttempts = 10;
+      const delayMs = 2000;
+      let attempt = 0;
+      let prev = 0;
+      try {
+        const cur = await getUserQuestAttempt(attemptId);
+        prev = Number(cur.total_score_achieved || 0);
+      } catch (_) {
+        prev = 0;
+      }
+
+      while (attempt < maxAttempts) {
+        // eslint-disable-next-line no-promise-executor-return -- intentional delay for polling interval
+        await new Promise((res) => setTimeout(res, delayMs));
+        await fetchMyQuestAttempts();
+        const latest = await getUserQuestAttempt(attemptId);
+        const latestScore = Number(latest.total_score_achieved || 0);
+        if (latestScore !== prev && latestScore > 0) {
+          await fetchMyQuestAttempts();
+          break;
+        }
+        attempt += 1;
+      }
+    } catch (err) {
+      logger.warn('Polling for updated score failed or timed out', err);
+    }
+
+    toggleAnswerAttemptMode();
   }
 
   const _handleViewFeedback = (attemptId: string): void => {
