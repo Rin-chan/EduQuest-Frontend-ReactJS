@@ -154,7 +154,7 @@ export function AccountPopup({eduquestUser, cosmetic, editable=false, draftCosme
                                 ` }}>
                                     {eduquestUser?.nickname}
                             </Typography>
-                            <Stack direction="row" spacing={1} sx={{display: 'flex', alignItems: 'center'}}>
+                            <Stack direction="row" spacing={1} sx={{display: 'flex', alignItems: 'center', flexWrap: 'wrap', maxWidth: 40 * 5 + 8 * 4}}>
                                 {
                                     cosmetic?.displayed_badges.map((badge: Badge) => (
                                         <Box
