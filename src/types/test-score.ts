@@ -4,7 +4,7 @@ import type { EduquestUser } from "./eduquest-user";
 export interface TestScore {
     id: number;
     course_group: CourseGroup;
-    name: String;
+    name: string;
     organiser: EduquestUser
     weightage: number;
 }

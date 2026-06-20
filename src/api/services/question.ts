@@ -1,5 +1,5 @@
 import apiService from "@/api/api-service";
-import type { Question, QuestionMultipleNewForm } from "@/types/question";
+import type { Question, QuestionMultipleNewForm, ShortAnsQuestionMultipleNewForm } from "@/types/question";
 
 
 export const getQuestionsAndAnswers = async (): Promise<Question[]> => {
@@ -22,3 +22,7 @@ export const createQuestionsAndAnswers = async (questionsAndAnswers: QuestionMul
   return response.data;
 }
 
+export const createShortAnsQuestionsAndAnswers = async (questionsAndAnswers: ShortAnsQuestionMultipleNewForm[]): Promise<Question> => {
+  const response = await apiService.post<Question>('/api/questions/short_ans/', questionsAndAnswers);
+  return response.data;
+}

@@ -37,16 +37,17 @@ import Points from "../../../../../public/assets/point.svg";
 import {getQuest, updateQuest} from "@/api/services/quest";
 import {getUserCourseGroupEnrollmentsByCourseAndUser} from "@/api/services/user-course-group-enrollment";
 import {type UserCourseGroupEnrollment} from "@/types/user-course-group-enrollment";
-import {createUserQuestAttempt, getUserQuestAttemptsByUserAndQuest} from "@/api/services/user-quest-attempt";
+import {createUserQuestAttempt, getUserQuestAttemptsByUserAndQuest, getUserQuestAttempt} from "@/api/services/user-quest-attempt";
 import {User as UserIcon} from "@phosphor-icons/react/dist/ssr/User";
-import {getUserAnswerAttemptByUserQuestAttempt} from "@/api/services/user-answer-attempt";
-import {type UserAnswerAttempt} from "@/types/user-answer-attempt";
+import {getUserAnswerAttemptByUserQuestAttempt, getUserShortAnswerAttemptByUserQuestAttempt} from "@/api/services/user-answer-attempt";
+import type {UserAnswerAttempt, UserShortAnswerAttempt} from "@/types/user-answer-attempt";
 import {AnswerAttemptCard} from "@/components/dashboard/quest/question/attempt/answer-attempt-card";
 import Box from "@mui/material/Box";
 import {SkeletonAnswerAttemptCard} from "@/components/dashboard/skeleton/skeleton-answer-attempt-card";
 import {generateFeedbackFromMicroservice, getStudentFeedbackByAttempt, saveStudentFeedback} from "@/api/services/student-feedback";
 import type {StudentFeedback} from "@/types/student-feedback";
 import {LeaderboardTableQuest} from  "@/components/dashboard/leaderboard/leaderboard-table-quest";
+import { getQuestionsByQuest } from '@/api/services/question';
 
 
 export default function Page({ params }: { params: { questId: string } }) : React.JSX.Element {
@@ -55,7 +56,7 @@ export default function Page({ params }: { params: { questId: string } }) : Reac
   const [courseEnrollments, setCourseEnrollments] = React.useState<UserCourseGroupEnrollment[]>();
   const [quest, setQuest] = React.useState<Quest>();
   const [userQuestAttempts, setUserQuestAttempts] = React.useState<UserQuestAttempt[]>();
-  const [userAnswerAttempts, setUserAnswerAttempts] = React.useState<UserAnswerAttempt[]>([]);
+  const [userAnswerAttempts, setUserAnswerAttempts] = React.useState<UserAnswerAttempt[] | UserShortAnswerAttempt[]>([]);
   const [userAnswerAttemptIdAndStatus, setUserAnswerAttemptIdAndStatus] = React.useState<{ attemptId: string; submitted: boolean; bonusAwarded: boolean } | null>(null);
 
   const [showAnswerAttemptsMode, setShowAnswerAttemptsMode] = React.useState(false);
@@ -81,9 +82,17 @@ export default function Page({ params }: { params: { questId: string } }) : Reac
       setUserAnswerAttemptIdAndStatus({ attemptId, submitted, bonusAwarded });
       toggleAnswerAttemptMode();
       // Fetch the selected user answer attempts
-      const response = await getUserAnswerAttemptByUserQuestAttempt(attemptId);
-      logger.debug('User answer attempts fetched:', response);
-      setUserAnswerAttempts(response);
+      const question = await getQuestionsByQuest(params.questId);
+      if (question && (question[0].question_type === 'short_ans' || question[0].question_type === 'latex_short_ans')) {
+        const response = await getUserShortAnswerAttemptByUserQuestAttempt(attemptId);
+        logger.debug('User short answer attempts fetched:', response);
+        setUserAnswerAttempts(response);
+      }
+      else {
+        const response = await getUserAnswerAttemptByUserQuestAttempt(attemptId);
+        logger.debug('User answer attempts fetched:', response);
+        setUserAnswerAttempts(response);
+      }
     } catch (error: unknown) {
       logger.error('Failed to fetch user answer attempts', error);
     } finally {
@@ -97,7 +106,37 @@ export default function Page({ params }: { params: { questId: string } }) : Reac
     setFeedbackStatus('loading');
     // Refresh the quest attempts table
     await fetchMyQuestAttempts();
-    toggleAnswerAttemptMode()
+
+    // Poll the server for the updated score (calculate_score runs asynchronously via Celery).
+    try {
+      const maxAttempts = 10;
+      const delayMs = 2000;
+      let attempt = 0;
+      let prev = 0;
+      try {
+        const cur = await getUserQuestAttempt(attemptId);
+        prev = Number(cur.total_score_achieved || 0);
+      } catch (_) {
+        prev = 0;
+      }
+
+      while (attempt < maxAttempts) {
+        // eslint-disable-next-line no-promise-executor-return -- intentional delay for polling interval
+        await new Promise((res) => setTimeout(res, delayMs));
+        await fetchMyQuestAttempts();
+        const latest = await getUserQuestAttempt(attemptId);
+        const latestScore = Number(latest.total_score_achieved || 0);
+        if (latestScore !== prev && latestScore > 0) {
+          await fetchMyQuestAttempts();
+          break;
+        }
+        attempt += 1;
+      }
+    } catch (err) {
+      logger.warn('Polling for updated score failed or timed out', err);
+    }
+
+    toggleAnswerAttemptMode();
   }
 
   const _handleViewFeedback = (attemptId: string): void => {
@@ -168,6 +207,7 @@ export default function Page({ params }: { params: { questId: string } }) : Reac
     if (eduquestUser) {
       try {
         const response = await getUserQuestAttemptsByUserAndQuest(eduquestUser.id.toString(), params.questId);
+        // @ts-expect-error type could be undefined
         setUserQuestAttempts(response);
       } catch (error: unknown) {
         logger.error('Failed to fetch user quest attempts', error);
@@ -178,9 +218,10 @@ export default function Page({ params }: { params: { questId: string } }) : Reac
   }, [eduquestUser, params.questId]);
 
   const onAnswerChange = (attemptId: number, answerId: number, isChecked: boolean): void => {
+    // @ts-expect-error type could be undefined
     setUserAnswerAttempts(prevData =>
       prevData.map(attempt => {
-        if (attempt.id === attemptId && attempt.answer.id === answerId) {
+        if ('answer' in attempt && attempt.id && attempt.id === attemptId && attempt.answer.id === answerId) {
           return { ...attempt, is_selected: isChecked };
         }
         return attempt;
@@ -188,7 +229,23 @@ export default function Page({ params }: { params: { questId: string } }) : Reac
     );
   };
 
+  const onShortAnswerChange = (attemptId: number, answerId: number, text: string): void => {
+    // @ts-expect-error type could be undefined
+    setUserAnswerAttempts(prevData =>
+      prevData.map(attempt => {
+        if ('unstructuredanswer' in attempt && attempt.id && attempt.id === attemptId && attempt.unstructuredanswer.id === answerId) {
+          return { 
+            ...attempt,
+            text: text
+          };
+        }
+        return attempt;
+      })
+    );
+  };
+
   const onHintUsed = (questionId: number): void => {
+    // @ts-expect-error type could be undefined
     setUserAnswerAttempts(prevData =>
       prevData.map(attempt => {
         if (attempt.question.id === questionId) {
@@ -305,7 +362,7 @@ export default function Page({ params }: { params: { questId: string } }) : Reac
           setFeedbackStatus('ready');
           return;
         }
-        const generated = await generateFeedbackFromMicroservice(feedbackAttemptId, eduquestUser.id);
+        const generated = await generateFeedbackFromMicroservice(feedbackAttemptId, eduquestUser.id, parseInt(params.questId));
         if (cancelled) {
           return;
         }
@@ -356,6 +413,7 @@ export default function Page({ params }: { params: { questId: string } }) : Reac
               submitted={userAnswerAttemptIdAndStatus.submitted}
               bonusAwarded={userAnswerAttemptIdAndStatus.bonusAwarded}
               onAnswerChange={onAnswerChange}
+              onShortAnswerChange={onShortAnswerChange}
               onHintUsed={onHintUsed}
               onAnswerSubmit={handleAnswerSubmit}
               onAnswerSave={fetchMyQuestAttempts}
@@ -621,7 +679,7 @@ export default function Page({ params }: { params: { questId: string } }) : Reac
       ) : null}
 
       {
-        quest && quest.type != 'Private' ?
+        quest && quest.type !== 'Private' ?
         <Card sx={{ mt: 5}}>
             <CardHeader
               title="Leaderboard"

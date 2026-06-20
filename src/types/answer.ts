@@ -12,3 +12,8 @@ export interface AnswerNewForm {
   reason: string | null;
 }
 
+export interface UnstructuredAnswer {
+  id: number;
+  text: string;
+  reason: string | null;
+}

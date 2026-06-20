@@ -37,10 +37,10 @@ import {type CourseGroup} from "@/types/course-group";
 import {getNonPrivateCourseGroups} from "@/api/services/course-group";
 import {getMyDocuments} from "@/api/services/document";
 import {createQuest} from "@/api/services/quest";
-import {createQuestionsAndAnswers} from "@/api/services/question";
-import type {GeneratedQuestion, GeneratedQuestions} from "@/types/question"
-import type {AnswerNewForm} from "@/types/answer";
-
+import {createQuestionsAndAnswers, createShortAnsQuestionsAndAnswers} from "@/api/services/question";
+import type {GeneratedQuestion, GeneratedQuestions, GeneratedShortAnsQuestion, GeneratedShortAnsQuestions} from "@/types/question"
+import type {AnswerNewForm, UnstructuredAnswer} from "@/types/answer";
+import CheckBox from "@mui/material/Checkbox";
 
 interface CourseFormProps {
   onFormSubmitSuccess: () => void;
@@ -55,6 +55,7 @@ export function GenerateQuestForm({onFormSubmitSuccess}: CourseFormProps): React
   const questMaxAttemptsRef = React.useRef<HTMLInputElement>(null);
   const numQuestionsRef = React.useRef<HTMLInputElement>(null);
   const difficultyRef = React.useRef<HTMLInputElement>(null);
+  const [checked, setChecked] = React.useState(false);
 
   const [courseGroups, setCourseGroups] = React.useState<CourseGroup[]>();
   const [documents, setDocuments] = React.useState<Document[]>();
@@ -261,24 +262,46 @@ export function GenerateQuestForm({onFormSubmitSuccess}: CourseFormProps): React
       setProgress(40);
       setProgressStatus('Generating Questions from Document');
 
-      const generatedQuestions = await generateQuestions(
-        filename?.split('/').pop() || '',
-        numQuestions,
-        difficulty
-      );
+      if (checked) {
+        const generatedQuestions = await generateShortAnsQuestions(
+          filename?.split('/').pop() || '',
+          numQuestions,
+          difficulty
+        );
 
-      if (!generatedQuestions || !Array.isArray(generatedQuestions.questions)) {
-        setSubmitStatus({ type: 'error', message: 'Question generation failed. Please try again.' });
-        setProgressStatus('Generation failed');
-        return;
+        if (!generatedQuestions || !Array.isArray(generatedQuestions.questions)) {
+          setSubmitStatus({ type: 'error', message: 'Question generation failed. Please try again.' });
+          setProgressStatus('Generation failed');
+          return;
+        }
+
+        setProgress(70);
+        setProgressStatus('Importing Questions generated');
+
+        await bulkCreateShortAnsQuestions(generatedQuestions.questions, newQuestId);
+        setProgress(100);
+        setProgressStatus('Completed');
       }
+      else {
+        const generatedQuestions = await generateQuestions(
+          filename?.split('/').pop() || '',
+          numQuestions,
+          difficulty
+        );
 
-      setProgress(70);
-      setProgressStatus('Importing Questions generated');
+        if (!generatedQuestions || !Array.isArray(generatedQuestions.questions)) {
+          setSubmitStatus({ type: 'error', message: 'Question generation failed. Please try again.' });
+          setProgressStatus('Generation failed');
+          return;
+        }
 
-      await bulkCreateQuestions(generatedQuestions.questions, newQuestId);
-      setProgress(100);
-      setProgressStatus('Completed');
+        setProgress(70);
+        setProgressStatus('Importing Questions generated');
+
+        await bulkCreateQuestions(generatedQuestions.questions, newQuestId);
+        setProgress(100);
+        setProgressStatus('Completed');
+      }
     } finally {
       setShowProgress(false);
       setIsSubmitting(false);
@@ -317,6 +340,24 @@ export function GenerateQuestForm({onFormSubmitSuccess}: CourseFormProps): React
     }
   };
 
+  const generateShortAnsQuestions = async (filename: string, numQuestions: number, difficulty: string): Promise<GeneratedShortAnsQuestions | null> => {
+    try {
+      const response: AxiosResponse<GeneratedShortAnsQuestions> = await microService.post(`/generate_short_ans_questions_from_document`, {
+        document_id: filename,
+        num_questions: numQuestions,
+        difficulty
+      });
+      logger.debug('Generate Short Answer Questions Success:', response.data);
+      return response.data;
+    } catch (error: unknown) {
+      logger.error('Error in generateShortAnsQuestions:', error);
+      setSubmitStatus({ type: 'error', message: getGenerateQuestionsErrorMessage(error) });
+      return null; // Explicitly return null on error
+    } finally {
+      logger.debug('Exiting generateShortAnsQuestions');
+    }
+  };
+
 
   const bulkCreateQuestions = async (generatedQuestions: GeneratedQuestion[], createdQuestId: number): Promise<void> => {
     try {
@@ -331,8 +372,36 @@ export function GenerateQuestForm({onFormSubmitSuccess}: CourseFormProps): React
         max_score: 10,
         quest_id: createdQuestId
       }));
+
       logger.debug('Questions to be created:', updatedQuestions);
       await createQuestionsAndAnswers(updatedQuestions);
+
+      setSubmitStatus({ type: 'success', message: 'Questions Created Successfully' });
+      onFormSubmitSuccess();
+    }
+    catch (error: unknown) {
+      logger.error('Questions Create Failed', error);
+      setSubmitStatus({type: 'error', message: getCreateQuestionsErrorMessage(error)});
+    }
+  }
+
+  const bulkCreateShortAnsQuestions = async (generatedQuestions: GeneratedShortAnsQuestion[], createdQuestId: number): Promise<void> => {
+    try {
+      const updatedQuestions: {
+        number: number;
+        max_score: number;
+        unstructuredanswer: UnstructuredAnswer;
+        quest_id: number;
+        text: string
+      }[] = generatedQuestions.map(question => ({
+        ...question,
+        max_score: 10,
+        quest_id: createdQuestId
+      }));
+
+      logger.debug('Questions to be created:', updatedQuestions);
+      await createShortAnsQuestionsAndAnswers(updatedQuestions);
+      
       setSubmitStatus({ type: 'success', message: 'Questions Created Successfully' });
       onFormSubmitSuccess();
     }
@@ -541,6 +610,16 @@ export function GenerateQuestForm({onFormSubmitSuccess}: CourseFormProps): React
                   <MenuItem value="Difficult">Difficult</MenuItem>
                 </Select>
                 {formErrors.difficulty ? <FormHelperText>{formErrors.difficulty}</FormHelperText> : null}
+              </FormControl>
+            </Grid>
+            <Grid md={4} xs={12}>
+              <FormControl fullWidth>
+                <FormLabel htmlFor="shortAns">Short-Answer Question</FormLabel>
+                <CheckBox
+                  checked={checked}
+                  onChange={() => {setChecked(!checked)}}
+                  size="small"
+                />
               </FormControl>
             </Grid>
           </Grid>

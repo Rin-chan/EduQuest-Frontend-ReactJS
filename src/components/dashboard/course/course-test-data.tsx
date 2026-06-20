@@ -42,23 +42,23 @@ export function TestData({open, setOpen, course}: TestDataProps): React.JSX.Elem
     const [pageScores, setPageScores] = React.useState<number>(0);
     const [rowsPerPageFiles, setRowsPerPageFiles] = React.useState<number>(5);
     const [rowsPerPageScores, setRowsPerPageScores] = React.useState<number>(5);
-    const [deleteConfirmation, setDeleteConfirmation] = React.useState<Boolean>(false);
+    const [deleteConfirmation, setDeleteConfirmation] = React.useState<boolean>(false);
     const [selected, setSelected] = React.useState<number>(-1);
-    const [selectedName, setSelectedName] = React.useState<String>('');
-    const [editing, setEditing] = React.useState<Boolean>(false);
+    const [selectedName, setSelectedName] = React.useState<string>('');
+    const [editing, setEditing] = React.useState<boolean>(false);
     const [weightage, setWeightage] = React.useState<number>(100);
-    const [refresh, setRefresh] = React.useState<Boolean>(true);
+    const [refresh, setRefresh] = React.useState<boolean>(true);
 
     React.useEffect(() => {
         if (refresh) {
             const fetchData = async () => {
                 try {
-                    const test_list =
+                    const testList =
                         await getTestScoresByCourseGroup(
                             course.id.toString()
                         );
 
-                    setFilesRow(test_list);
+                    setFilesRow(testList);
                 } catch (error) {
                     logger.error("Failed to fetch data", error);
                 }
@@ -102,11 +102,11 @@ export function TestData({open, setOpen, course}: TestDataProps): React.JSX.Elem
         [scoresRow, pageScores, rowsPerPageScores],
     );
 
-    const editFile = async (id: number, name: String, weightage: number): Promise<void> => {
-        const student_test_list = await getUserTestScoresByTest(id.toString());
-        setScoresRow(student_test_list);
+    const editFile = async (id: number, name: string, weightageEdit: number): Promise<void> => {
+        const studentTestList = await getUserTestScoresByTest(id.toString());
+        setScoresRow(studentTestList);
         setSelectedName(name);
-        setWeightage(weightage);
+        setWeightage(weightageEdit);
 
         setSelected(id);
         setEditing(true);
@@ -142,7 +142,7 @@ export function TestData({open, setOpen, course}: TestDataProps): React.JSX.Elem
     const saveEdit = async (): Promise<void> => {
         await Promise.all([
             updateUserTestScores(scoresRow),
-            updateTestScoreWeightage(selected.toString(), weightage)
+            updateTestScoreWeightage(selected.toString(), weightage.toString())
         ]);
         setRefresh(true);
         returnEdit();
@@ -272,13 +272,13 @@ export function TestData({open, setOpen, course}: TestDataProps): React.JSX.Elem
                                             <Button variant="contained" onClick={() => {confirmDelete(-1, false)}}>
                                                 Cancel
                                             </Button>
-                                            <Button variant="contained" color="error" onClick={() => {deleteFile(row.id)}}>
+                                            <Button variant="contained" color="error" onClick={async () => {try{await deleteFile(row.id)}catch(e){return}}}>
                                                 Confirm Delete
                                             </Button>
                                         </Stack>
                                     ) : (
                                         <Stack>
-                                            <Button variant="contained" color="primary" onClick={() => {editFile(row.id, row.name, row.weightage)}}>
+                                            <Button variant="contained" color="primary" onClick={async () => {try{await editFile(row.id, row.name, row.weightage)}catch(e){return}}}>
                                                 Edit
                                             </Button>
                                             <Button variant="contained" color="error" onClick={() => {confirmDelete(row.id, true)}}>

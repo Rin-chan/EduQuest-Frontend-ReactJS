@@ -21,12 +21,12 @@ import { FloppyDisk as FloppyDiskIcon } from "@phosphor-icons/react/dist/ssr/Flo
 import { PaperPlaneTilt as PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr/PaperPlaneTilt";
 import { Eye as EyeIcon } from "@phosphor-icons/react/dist/ssr/Eye";
 import { EyeClosed as EyeClosedIcon } from "@phosphor-icons/react/dist/ssr/EyeClosed";
-import { Divider, Alert, Stack, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select } from "@mui/material";
+import { Divider, Alert, Stack, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select, TextField, FormControl } from "@mui/material";
 import LinearProgress from '@mui/material/LinearProgress';
-import type { UserAnswerAttempt, UserAnswerAttemptUpdateForm } from "@/types/user-answer-attempt";
+import type { UserAnswerAttempt, UserAnswerAttemptUpdateForm, UserShortAnswerAttempt, UserShortAnswerAttemptUpdateForm } from "@/types/user-answer-attempt";
 import { type UserQuestAttemptUpdateForm } from "@/types/user-quest-attempt";
 import { logger } from "@/lib/default-logger";
-import { updateMultipleUserAnswerAttempts } from "@/api/services/user-answer-attempt";
+import { updateMultipleUserAnswerAttempts, updateMultipleUserShortAnswerAttempts } from "@/api/services/user-answer-attempt";
 import { updateUserQuestAttempt, claimUserQuestAttemptBonus } from "@/api/services/user-quest-attempt";
 import Points from "../../../../../../public/assets/point.svg";
 import { useUser } from '@/hooks/use-user';
@@ -40,8 +40,9 @@ import { updateDailyGoals } from '@/api/services/eduquest-user';
 
 
 interface AnswerAttemptCardProps {
-  data: UserAnswerAttempt[];
+  data: UserAnswerAttempt[] | UserShortAnswerAttempt[];
   onAnswerChange: (attemptId: number, answerId: number, isChecked: boolean) => void;
+  onShortAnswerChange: (attemptId: number, answerId: number, text: string) => void;
   userQuestAttemptId: string;
   submitted: boolean;
   bonusAwarded: boolean;
@@ -54,7 +55,8 @@ interface AnswerAttemptCardProps {
 
 interface GroupedQuestion {
   question: UserAnswerAttempt['question'];
-  answers: UserAnswerAttempt[];
+  unstructuredanswer: UserShortAnswerAttempt | null;
+  answers: UserAnswerAttempt[] | null;
 }
 
 /**
@@ -64,21 +66,23 @@ interface GroupedQuestion {
  * @returns An array of React elements.
  */
 const parseKaTeX = (text: string): React.ReactNode[] => {
-  // Replace double backslashes with a single backslash
-  const sanitizedText = text.replace(/\\\\/g, '\\');
+  const parts = text.split(/(?<katex>\\\([\s\S]*?\\\))/g);
 
-  const parts = sanitizedText.split(/(?<katex>\$[^$]*\$)/g); // Split by KaTeX expressions
   return parts.map((part, index) => {
-    if (part.startsWith('$') && part.endsWith('$')) {
-      const math = part.slice(1, -1); // Remove the $ delimiters
-      // eslint-disable-next-line react/no-array-index-key -- KaTeX tokens may repeat and lack stable ids
-      return <InlineMath key={index} math={math} />;
+    if (part.startsWith('\\(') && part.endsWith('\\)')) {
+      return (
+        <InlineMath
+          key={index}
+          math={part.slice(2, -2)}
+        />
+      );
     }
+
     return part;
   });
 };
 
-export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, submitted, bonusAwarded: initialBonusAwarded, onHintUsed, onAnswerSubmit: onAnswerSubmit, onAnswerSave, isPrivateQuest, questId }: AnswerAttemptCardProps): React.JSX.Element {
+export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, onShortAnswerChange, submitted, bonusAwarded: initialBonusAwarded, onHintUsed, onAnswerSubmit: onAnswerSubmit, onAnswerSave, isPrivateQuest, questId }: AnswerAttemptCardProps): React.JSX.Element {
   const { checkSession, eduquestUser } = useUser();
   const [page, setPage] = React.useState(1);
   const [showExplanation, setShowExplanation] = React.useState<Record<number, boolean>>({});
@@ -99,15 +103,21 @@ export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, su
     const map = new Map<number, GroupedQuestion>();
     data.forEach(attempt => {
       const q = attempt.question;
-      if (!map.has(q.id)) {
-        map.set(q.id, { question: q, answers: [] });
+      if ((q.question_type === 'short_ans' || q.question_type === 'latex_short_ans') && !map.has(q.id)) {
+        map.set(q.id, { question: q, unstructuredanswer: attempt as UserShortAnswerAttempt, answers: [] });
       }
-      map.get(q.id)?.answers.push(attempt);
+      else if (!map.has(q.id)) {
+        map.set(q.id, { question: q, unstructuredanswer: null, answers: [] });
+      }
+
+      map.get(q.id)?.answers?.push(attempt as UserAnswerAttempt);
     });
 
     // Sort answers by answer.id in ascending order
-    map.forEach(group => {
-      group.answers.sort((a, b) => a.answer.id - b.answer.id);
+    map.forEach((group) => {
+      if (group.answers) {
+        group.answers.sort((a, b) => a.answer.id - b.answer.id);
+      }
     });
 
     return Array.from(map.values()).sort((a, b) => a.question.number - b.question.number);
@@ -133,10 +143,18 @@ export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, su
     }
   };
 
-  const bulkUpdateUserAnswerAttempts = async (updatedUserAnswerAttempts: UserAnswerAttemptUpdateForm[]): Promise<void> => {
+  const bulkUpdateUserAnswerAttempts = async (updatedUserAnswerAttempts: UserAnswerAttemptUpdateForm[] | UserShortAnswerAttemptUpdateForm[]): Promise<void> => {
     try {
-      const response = await updateMultipleUserAnswerAttempts(updatedUserAnswerAttempts);
-      logger.debug('Bulk Update UserAnswerAttempts Success:', response);
+      if (data && (data[0].question.question_type === 'short_ans' || data[0].question.question_type === 'latex_short_ans')) {
+        // @ts-expect-error type could be undeefined
+        const response = await updateMultipleUserShortAnswerAttempts(updatedUserAnswerAttempts);
+        logger.debug('Bulk Update UserShortAnswerAttempts Success:', response);
+      }
+      else {
+        // @@ts-expect-errortype could be undeefined
+        const response = await updateMultipleUserAnswerAttempts(updatedUserAnswerAttempts);
+        logger.debug('Bulk Update UserAnswerAttempts Success:', response);
+      }
     } catch (error: unknown) {
       logger.error('Bulk Update UserAnswerAttempts Failed:', error);
     }
@@ -149,36 +167,72 @@ export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, su
     event.preventDefault();
     const currentDate = new Date().toISOString();
 
-    // 1. Prepare the data to update is_selected
-    const updatedUserAnswerAttempts: UserAnswerAttemptUpdateForm[] = data.map(attempt => ({
-      id: attempt.id,
-      is_selected: attempt.is_selected,
-      hint_used: attempt.hint_used,
-    }));
+    if (data && (data[0].question.question_type === 'short_ans' || data[0].question.question_type === 'latex_short_ans')) {
+      // 1. Prepare the data to update is_selected
+      const updatedUserAnswerAttempts: UserShortAnswerAttemptUpdateForm[] = data.map(attempt => ({
+        id: attempt.id,
+        text: 'unstructuredanswer' in attempt ? attempt.text : '',
+        hint_used: attempt.hint_used,
+      }));
 
-    if (eduquestUser) {
-      try {
-        // 2. Update UserAnswerAttempts
-        await bulkUpdateUserAnswerAttempts(updatedUserAnswerAttempts);
+      if (eduquestUser) {
+        try {
+          // 2. Update UserAnswerAttempts
+          await bulkUpdateUserAnswerAttempts(updatedUserAnswerAttempts);
 
-        // 3. Update UserQuestAttempt with last_attempted_date
-        const updatedUserQuestAttempt: UserQuestAttemptUpdateForm = {
-          submitted: false,
-          last_attempted_date: currentDate,
-          student_id: eduquestUser.id,
-          quest_id: data[0].question.quest_id,
-        };
-        await updateUserQuestAttempt(userQuestAttemptId, updatedUserQuestAttempt);
+          // 3. Update UserQuestAttempt with last_attempted_date
+          const updatedUserQuestAttempt: UserQuestAttemptUpdateForm = {
+            submitted: false,
+            last_attempted_date: currentDate,
+            student_id: eduquestUser.id,
+            quest_id: data[0].question.quest_id,
+          };
+          await updateUserQuestAttempt(userQuestAttemptId, updatedUserQuestAttempt);
 
-        // 4. Refresh the user attempt table
-        onAnswerSave();
+          // 4. Refresh the user attempt table
+          onAnswerSave();
 
-        // 5. Update local state with calculated scores
-        setStatus({ type: 'success', message: 'Save Successful.' });
-        logger.debug('Save action completed successfully.');
-      } catch (error) {
-        setStatus({ type: 'error', message: 'Save Failed. Please try again.' });
-        logger.error('Save action failed:', error);
+          // 5. Update local state with calculated scores
+          setStatus({ type: 'success', message: 'Save Successful.' });
+          logger.debug('Save action completed successfully.');
+        } catch (error) {
+          setStatus({ type: 'error', message: 'Save Failed. Please try again.' });
+          logger.error('Save action failed:', error);
+        }
+      }
+    }
+    else {
+      // 1. Prepare the data to update is_selected
+      const updatedUserAnswerAttempts: UserAnswerAttemptUpdateForm[] = data.map(attempt => ({
+        id: attempt.id,
+        is_selected: 'is_selected' in attempt ? attempt.is_selected : false,
+        hint_used: attempt.hint_used,
+      }));
+
+      if (eduquestUser) {
+        try {
+          // 2. Update UserAnswerAttempts
+          await bulkUpdateUserAnswerAttempts(updatedUserAnswerAttempts);
+
+          // 3. Update UserQuestAttempt with last_attempted_date
+          const updatedUserQuestAttempt: UserQuestAttemptUpdateForm = {
+            submitted: false,
+            last_attempted_date: currentDate,
+            student_id: eduquestUser.id,
+            quest_id: data[0].question.quest_id,
+          };
+          await updateUserQuestAttempt(userQuestAttemptId, updatedUserQuestAttempt);
+
+          // 4. Refresh the user attempt table
+          onAnswerSave();
+
+          // 5. Update local state with calculated scores
+          setStatus({ type: 'success', message: 'Save Successful.' });
+          logger.debug('Save action completed successfully.');
+        } catch (error) {
+          setStatus({ type: 'error', message: 'Save Failed. Please try again.' });
+          logger.error('Save action failed:', error);
+        }
       }
     }
 
@@ -197,46 +251,92 @@ export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, su
     // const updatedData = calculateScores([...data]); // Clone data to avoid mutating state directly
     // logger.debug('Updated Data:', updatedData);
     // 2. Prepare the data to update is_selected and score_achieved
-    const updatedUserAnswerAttempts: UserAnswerAttemptUpdateForm[] = data.map(attempt => ({
-      id: attempt.id,
-      is_selected: attempt.is_selected,
-      hint_used: attempt.hint_used
-    }));
+    if (data && (data[0].question.question_type === 'short_ans' || data[0].question.question_type === 'latex_short_ans')) {
+      const updatedUserAnswerAttempts: UserShortAnswerAttemptUpdateForm[] = data.map(attempt => ({
+        id: attempt.id,
+        text: 'unstructuredanswer' in attempt ? attempt.text : '',
+        hint_used: attempt.hint_used,
+      }));
 
-    logger.debug('Updated UserAnswerAttempts:', updatedUserAnswerAttempts);
+      logger.debug('Updated UserAnswerAttempts:', updatedUserAnswerAttempts);
 
-    if (eduquestUser) {
-      try {
-        // 3. Update UserAnswerAttempts
-        await bulkUpdateUserAnswerAttempts(updatedUserAnswerAttempts);
+      if (eduquestUser) {
+        try {
+          // 3. Update UserAnswerAttempts
+          await bulkUpdateUserAnswerAttempts(updatedUserAnswerAttempts);
 
-        // 4. Update UserQuestAttempt with submitted=true and last_attempted_date
-        const updatedUserQuestAttempt: UserQuestAttemptUpdateForm = {
-          submitted: true,
-          last_attempted_date: currentDate,
-          student_id: eduquestUser.id,
-          quest_id: data[0].question.quest_id,
-        };
-        await updateUserQuestAttempt(userQuestAttemptId, updatedUserQuestAttempt);
+          // 4. Update UserQuestAttempt with submitted=true and last_attempted_date
+          const updatedUserQuestAttempt: UserQuestAttemptUpdateForm = {
+            submitted: true,
+            last_attempted_date: currentDate,
+            student_id: eduquestUser.id,
+            quest_id: data[0].question.quest_id,
+          };
+          await updateUserQuestAttempt(userQuestAttemptId, updatedUserQuestAttempt);
 
-        // 5. Update User Daily Goals if they have any goals related to quests
-        await updateUserDailyGoals();
+          // 5. Update User Daily Goals if they have any goals related to quests
+          await updateUserDailyGoals();
 
-        // 6. Update local state with calculated scores
-        setStatus({ type: 'success', message: 'Submit Successful! Redirecting to Quest page...' });
-        logger.debug('Submit action completed successfully.');
+          // 6. Update local state with calculated scores
+          setStatus({ type: 'success', message: 'Submit Successful! Redirecting to Quest page...' });
+          logger.debug('Submit action completed successfully.');
 
-        // 7. Optionally, refresh user session or data here
-        await refreshUser();
+          // 7. Optionally, refresh user session or data here
+          await refreshUser();
 
-        // 8. Redirect to Quest page after submission
-        onAnswerSubmit(userQuestAttemptId);
-      } catch (error) {
-        setStatus({ type: 'error', message: 'Submit Failed. Please try again.' });
-        logger.error('Submit action failed:', error);
+          // 8. Redirect to Quest page after submission
+          onAnswerSubmit(userQuestAttemptId);
+
+          // 5. Update local state with calculated scores
+          setStatus({ type: 'success', message: 'Save Successful.' });
+          logger.debug('Save action completed successfully.');
+        } catch (error) {
+          setStatus({ type: 'error', message: 'Save Failed. Please try again.' });
+          logger.error('Save action failed:', error);
+        }
       }
     }
+    else {
+      const updatedUserAnswerAttempts: UserAnswerAttemptUpdateForm[] = data.map(attempt => ({
+        id: attempt.id,
+        is_selected: 'is_selected' in attempt ? attempt.is_selected : false,
+        hint_used: attempt.hint_used,
+      }));
 
+      logger.debug('Updated UserAnswerAttempts:', updatedUserAnswerAttempts);
+
+      if (eduquestUser) {
+        try {
+          // 3. Update UserAnswerAttempts
+          await bulkUpdateUserAnswerAttempts(updatedUserAnswerAttempts);
+
+          // 4. Update UserQuestAttempt with submitted=true and last_attempted_date
+          const updatedUserQuestAttempt: UserQuestAttemptUpdateForm = {
+            submitted: true,
+            last_attempted_date: currentDate,
+            student_id: eduquestUser.id,
+            quest_id: data[0].question.quest_id,
+          };
+          await updateUserQuestAttempt(userQuestAttemptId, updatedUserQuestAttempt);
+
+          // 5. Update User Daily Goals if they have any goals related to quests
+          await updateUserDailyGoals();
+
+          // 6. Update local state with calculated scores
+          setStatus({ type: 'success', message: 'Submit Successful! Redirecting to Quest page...' });
+          logger.debug('Submit action completed successfully.');
+
+          // 7. Optionally, refresh user session or data here
+          await refreshUser();
+
+          // 8. Redirect to Quest page after submission
+          onAnswerSubmit(userQuestAttemptId);
+        } catch (error) {
+          setStatus({ type: 'error', message: 'Submit Failed. Please try again.' });
+          logger.error('Submit action failed:', error);
+        }
+      }
+    };
   };
 
   const toggleExplanation = (questionId: number): void => {
@@ -248,6 +348,10 @@ export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, su
 
   const handleCheckboxChange = (attemptId: number, answerId: number, isChecked: boolean): void => {
     onAnswerChange(attemptId, answerId, isChecked);
+  };
+
+  const handleTextFieldChange = (attemptId: number, answerId: number, text: string): void => {
+    onShortAnswerChange(attemptId, answerId, text);
   };
 
   const shuffleArray = (items: string[]): string[] => {
@@ -412,7 +516,7 @@ export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, su
           <Pagination count={pageCount} page={page} onChange={handleChangePage} color="primary" />
         </Box>
         <Grid container spacing={4}>
-          {currentPageQuestions.map(({ question, answers }) => (
+          {currentPageQuestions.map(({ question, unstructuredanswer, answers }) => (
             <Grid key={question.id} xs={12}>
               <Card>
                 <CardHeader
@@ -423,7 +527,7 @@ export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, su
                       <Points height={18} />
                     </Stack>
                   }
-                  action={submitted && question.answers.some(a => a.reason) ? (
+                  action={submitted && (question.answers.some(a => a.reason) || question.unstructuredanswer) ? (
                       <Button
                         startIcon={showExplanation[question.id] ? <EyeClosedIcon /> : <EyeIcon />}
                         onClick={() => { toggleExplanation(question.id); }}
@@ -445,60 +549,99 @@ export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, su
                           size="small"
                           variant="text"
                           onClick={() => { markHintUsed(question.id); }}
-                          disabled={answers.some(a => a.hint_used)}
+                          disabled={answers ? answers.some(a => a.hint_used) : unstructuredanswer?.hint_used}
                           sx={{ mt: 1, px: 0 }}
                         >
-                          {answers.some(a => a.hint_used) ? 'Hint Used (-5 points)' : 'Show Hint (-5 points)'}
+                          {answers ? answers.some(a => a.hint_used) ? 'Hint Used (-5 points)' : 'Show Hint (-5 points)' : unstructuredanswer?.hint_used ? 'Hint Used (-5 points)' : 'Show Hint (-5 points)'}
                         </Button>
                       ) : null}
-                      {question.hint && answers.some(a => a.hint_used) ? (
+                      {question.hint && (answers?.some(a => a.hint_used) || unstructuredanswer?.hint_used) ? (
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                           {parseKaTeX(question.hint)}
                         </Typography>
                       ) : null}
                     </Grid>
-                    {answers.map((attempt) => {
-                      const isCorrect = Boolean(attempt.answer.is_correct);
-                      const isSelected = Boolean(attempt.is_selected);
-                      const statusLabel = isCorrect
-                        ? 'Correct Answer'
-                        : isSelected
-                          ? 'Wrong Answer'
-                          : 'Not Correct';
-                      return (
-                        <Grid key={attempt.answer.id} md={6} xs={12}>
-                          <Stack spacing={1}>
-                            <FormControlLabel
-                              control={
-                                <Checkbox
-                                  checked={attempt.is_selected}
-                                  onChange={(e) => { handleCheckboxChange(attempt.id, attempt.answer.id, e.target.checked); }}
-                                  disabled={submitted}
-                                />
-                              }
-                              label={parseKaTeX(attempt.answer.text)}
-                            />
-                            {submitted ? (
-                              <Stack direction="row" spacing={1} sx={{ mt: -0.5 }}>
-                                <Chip size="small" color={isCorrect ? "success" : isSelected ? "error" : "default"} label={statusLabel} />
-                              </Stack>
-                            ) : null}
-                            {showExplanation[attempt.question.id] && attempt.answer.reason ? (
-                              <Typography variant="body2" mt={0.5}>
-                                {parseKaTeX(attempt.answer.reason)}
-                              </Typography>
-                            ) : null}
-                          </Stack>
-                        </Grid>
-                      );
-                    })}
+                    {
+                      question.question_type === 'short_ans' || question.question_type === 'latex_short_ans' ?
+                      <>
+                        <Grid key={unstructuredanswer?.unstructuredanswer.id} md={6} xs={12}>
+                            <Stack spacing={1}>
+                              <FormControl
+                                fullWidth
+                                required
+                              >
+                                <TextField
+                                    value={unstructuredanswer?.text ?? ''}
+                                    variant='outlined'
+                                    multiline
+                                    rows={3}
+                                    onChange={(e) => { handleTextFieldChange(unstructuredanswer?.id ?? -1, unstructuredanswer?.unstructuredanswer?.id ?? -1, e.currentTarget.value); }}
+                                    disabled={submitted}
+                                  />
+                              </FormControl>
+                              {submitted ? (
+                                <Stack direction="row" spacing={1} sx={{ mt: -0.5 }}>
+                                  <Chip 
+                                    size="small" 
+                                    color={unstructuredanswer?.score_achieved === question.max_score ? "success" : unstructuredanswer && unstructuredanswer?.score_achieved >= (question.max_score/2) ? "warning" : "error"} 
+                                    label={unstructuredanswer?.score_achieved === question.max_score ? 'Correct Answer' : unstructuredanswer && unstructuredanswer?.score_achieved >= (question.max_score/2) ? "Partially Correct" : 'Wrong Answer'}
+                                  />
+                                </Stack>
+                              ) : null}
+                              {showExplanation[question.id ?? -1] && unstructuredanswer?.unstructuredanswer.reason ? (
+                                <Typography variant="body2" mt={0.5}>
+                                  {parseKaTeX(unstructuredanswer?.unstructuredanswer.reason)}
+                                </Typography>
+                              ) : null}
+                            </Stack>
+                          </Grid>
+                      </>
+                      :
+                      <>
+                        {answers?.map((attempt) => {
+                        const isCorrect = Boolean(attempt.answer.is_correct);
+                        const isSelected = Boolean(attempt.is_selected);
+                        const statusLabel = isCorrect
+                          ? 'Correct Answer'
+                          : isSelected
+                            ? 'Wrong Answer'
+                            : 'Not Correct';
+                        return (
+                          <Grid key={attempt.answer.id} md={6} xs={12}>
+                            <Stack spacing={1}>
+                              <FormControlLabel
+                                control={
+                                  <Checkbox
+                                    checked={attempt.is_selected}
+                                    onChange={(e) => { handleCheckboxChange(attempt.id, attempt.answer.id, e.target.checked); }}
+                                    disabled={submitted}
+                                  />
+                                }
+                                label={parseKaTeX(attempt.answer.text)}
+                              />
+                              {submitted ? (
+                                <Stack direction="row" spacing={1} sx={{ mt: -0.5 }}>
+                                  <Chip size="small" color={isCorrect ? "success" : isSelected ? "error" : "default"} label={statusLabel} />
+                                </Stack>
+                              ) : null}
+                              {showExplanation[attempt.question.id] && attempt.answer.reason ? (
+                                <Typography variant="body2" mt={0.5}>
+                                  {parseKaTeX(attempt.answer.reason)}
+                                </Typography>
+                              ) : null}
+                            </Stack>
+                          </Grid>
+                        );
+                        })}
+                      </>
+                    }
                   </Grid>
                 </CardContent>
                 <CardActions sx={{ justifyContent: 'space-between' }}>
                   <Stack direction="row" pl={2}>
                     { submitted ?
                       <Typography variant="subtitle2">
-                        Score Achieved: {answers.reduce((acc, curr) => acc + curr.score_achieved, 0).toFixed(2)} / {question.max_score}
+                        Score Achieved: {answers?.reduce((acc, curr) => acc + curr.score_achieved, 0).toFixed(2)} / {question.max_score}
                       </Typography> : null
                     }
                       </Stack>

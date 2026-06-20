@@ -1,4 +1,4 @@
-import {type Answer, type AnswerNewForm} from "@/types/answer";
+import type {Answer, AnswerNewForm, UnstructuredAnswer} from "@/types/answer";
 
 
 export interface Question {
@@ -11,6 +11,7 @@ export interface Question {
   question_type?: string;
   structured_data?: Record<string, unknown>;
   answers: Answer[];
+  unstructuredanswer: UnstructuredAnswer;
 }
 
 export interface QuestionMultipleNewForm {
@@ -24,6 +25,17 @@ export interface QuestionMultipleNewForm {
   answers: AnswerNewForm[];
 }
 
+export interface ShortAnsQuestionMultipleNewForm {
+  quest_id: number;
+  text: string;
+  number: number;
+  max_score: number;
+  hint?: string | null;
+  question_type?: string;
+  structured_data?: Record<string, unknown>;
+  unstructuredanswer: UnstructuredAnswer;
+}
+
 export interface GeneratedQuestions {
   questions: GeneratedQuestion[];
 }
@@ -35,4 +47,17 @@ export interface GeneratedQuestion {
   question_type?: string;
   structured_data?: Record<string, unknown>;
   answers: AnswerNewForm[];
+}
+
+export interface GeneratedShortAnsQuestions {
+  questions: GeneratedShortAnsQuestion[];
+}
+
+export interface GeneratedShortAnsQuestion {
+  number: number;
+  text: string;
+  hint?: string | null;
+  question_type?: string;
+  structured_data?: Record<string, unknown>;
+  unstructuredanswer: UnstructuredAnswer;
 }
