@@ -17,6 +17,8 @@ import {logger} from "@/lib/default-logger";
 import {importTestScore} from '@/api/services/test-score';
 import Alert from "@mui/material/Alert";
 import {Loading} from "@/components/dashboard/loading/loading";
+import Tooltip from '@mui/material/Tooltip';
+import { Info as InfoIcon } from "@phosphor-icons/react/dist/ssr/Info";
 
 interface ImportDataFormProps {
     open: boolean;
@@ -145,7 +147,25 @@ export function ImportDataForm({open, setOpen, courseGroupId}: ImportDataFormPro
                 </Stack>
 
                 <Stack sx={{ m:2 }}>
-                    <Typography variant="h5">Upload File</Typography>
+                    <Typography variant="h5">
+                        Upload File 
+                        <Tooltip title={
+                            <Typography variant="inherit">
+                                The file should be an excel file with a column for email and score
+                                <br />
+                                <br />
+                                <strong>Example:</strong>
+                                <br />
+                                email | score
+                                <br />
+                                student1@e.ntu.edu.sg | 70
+                                <br />
+                                student2@e.ntu.edu.sg | 75
+                            </Typography>
+                        }>
+                            <InfoIcon />
+                        </Tooltip>
+                    </Typography>
                     <Button
                     variant="contained"
                     component="label"
