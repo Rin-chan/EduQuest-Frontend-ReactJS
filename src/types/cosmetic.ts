@@ -12,4 +12,5 @@ export interface Cosmetic {
     type: CosmeticType;
     image: Image;
     cost: number;
+    purchaseable?: true | boolean;
 }

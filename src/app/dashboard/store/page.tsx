@@ -17,7 +17,7 @@ export default function Page(): React.JSX.Element {
 
   useEffect(() => {
     getAllCosmetic().then((response) => {
-      setList(response)
+      setList(response.filter((res) => res.purchaseable))
     })
     .catch(() => { return; })
   }, [])
