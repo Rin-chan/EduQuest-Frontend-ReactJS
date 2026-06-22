@@ -580,7 +580,21 @@ export function AccountDetailsForm(): React.JSX.Element {
               </Box>
             </CardContent>
 
-            <Divider orientation={{xs: 'horizontal', sm: 'vertical'}} flexItem/>
+            <Divider
+              flexItem
+              orientation="vertical"
+              sx={{
+                display: { xs: "none", sm: "block" },
+              }}
+            />
+
+            <Divider
+              flexItem
+              orientation="horizontal"
+              sx={{
+                display: { xs: "block", sm: "none" }
+              }}
+            />
 
             <CardContent>
               <Typography variant="body1">Choose Preset</Typography>
@@ -701,7 +715,21 @@ export function AccountDetailsForm(): React.JSX.Element {
               </Box>
             </CardContent>
 
-            <Divider orientation={{xs: 'horizontal', sm: 'vertical'}} flexItem/>
+            <Divider
+              flexItem
+              orientation="vertical"
+              sx={{
+                display: { xs: "none", sm: "block" },
+              }}
+            />
+
+            <Divider
+              flexItem
+              orientation="horizontal"
+              sx={{
+                display: { xs: "block", sm: "none" }
+              }}
+            />
 
             <CardContent>
               <Typography variant="body1">Choose Border</Typography>
@@ -828,7 +856,21 @@ export function AccountDetailsForm(): React.JSX.Element {
               </Stack>
             </CardContent>
 
-            <Divider orientation={{xs: 'horizontal', sm: 'vertical'}} flexItem/>
+            <Divider
+              flexItem
+              orientation="vertical"
+              sx={{
+                display: { xs: "none", sm: "block" },
+              }}
+            />
+
+            <Divider
+              flexItem
+              orientation="horizontal"
+              sx={{
+                display: { xs: "block", sm: "none" }
+              }}
+            />
 
             <CardContent>
               <Typography variant="body1">Choose Banner</Typography>
