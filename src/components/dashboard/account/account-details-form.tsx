@@ -368,7 +368,7 @@ export function AccountDetailsForm(): React.JSX.Element {
       <Card>
         <CardContent style={backgroundStyle}>
           <Grid container spacing={3}>
-            <Grid sm={6} xs={12}>
+            <Grid md={6} sm={10} xs={12}>
               <Grid style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', marginBottom: '64px' }}>
                 <IconButton onClick={openAvatarEditChange}>
                   <Box
@@ -423,7 +423,7 @@ export function AccountDetailsForm(): React.JSX.Element {
               </Grid>
             </Grid>
 
-            <Grid sm={6} xs={12}>
+            <Grid md={6} sm={10} xs={12}>
               <Typography variant="overline" color="text.secondary">Display of profile</Typography>
               <AccountPopup
                 eduquestUser={eduquestUser}
@@ -556,7 +556,7 @@ export function AccountDetailsForm(): React.JSX.Element {
             </Stack>
         </DialogTitle>
         <DialogContent>
-          <Card sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+          <Card sx={{ display: 'flex', flexDirection: {xs: 'column', sm: 'row'}, alignItems: 'center'}}>
             <CardContent>
               <Box
                 sx={{
@@ -580,13 +580,13 @@ export function AccountDetailsForm(): React.JSX.Element {
               </Box>
             </CardContent>
 
-            <Divider orientation='vertical' flexItem/>
+            <Divider orientation={{xs: 'horizontal', sm: 'vertical'}} flexItem/>
 
             <CardContent>
               <Typography variant="body1">Choose Preset</Typography>
 
               <Grid direction="row" container>
-                <Grid sm={4} xs={8}>
+                <Grid sm={4} xs={4}>
 	                <IconButton onClick={() => { updateAvatarChange(null); }} sx={(draftCosmetic.profile_picture?.image.name === null || draftCosmetic.profile_picture?.image.name === '') ? {backgroundColor : theme.palette.action.selected} : null}>
                     <UserAvatar size='48px' {...userAvatarProps}/>
                   </IconButton>
@@ -594,7 +594,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
                 {
                   avatarList.map((item: Cosmetic) => (
-                    <Grid key={item.type.toString() + item.id.toString()} sm={4} xs={8}>
+                    <Grid key={item.type.toString() + item.id.toString()} sm={4} xs={4}>
                       <IconButton onClick={() => { updateAvatarChange(item)  }} sx={(draftCosmetic.profile_picture?.image.name !== null && item.image.id === draftCosmetic.profile_picture?.image?.id) ? {backgroundColor : theme.palette.action.selected} : null}>
                         <Avatar
                           alt={item.image.filename}
@@ -629,14 +629,14 @@ export function AccountDetailsForm(): React.JSX.Element {
             <CardContent>
               <Grid direction="row" container>
                 <Grid xs={2}>
-                    <IconButton onClick={() => { updateBackgroundColor('theme.palette.background.paper')}}>
+                  <IconButton onClick={() => { updateBackgroundColor('theme.palette.background.paper')}}>
                     <CircleIcon htmlColor={theme.palette.background.paper} fontSize="large" />
                   </IconButton>
                 </Grid>
                 {
                   colorsAvailable.map((colorOption: string) => (
                     <Grid key={colorOption} xs={2}>
-                        <IconButton onClick={() => { updateBackgroundColor(colorOption)}}>
+                      <IconButton onClick={() => { updateBackgroundColor(colorOption)}}>
                         <CircleIcon htmlColor={colorOption} fontSize="large" />
                       </IconButton>
                     </Grid>
@@ -659,7 +659,7 @@ export function AccountDetailsForm(): React.JSX.Element {
             </Stack>
         </DialogTitle>
         <DialogContent>
-          <Card sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+          <Card sx={{ display: 'flex', flexDirection: {xs: 'column', sm: 'row'}, alignItems: 'center'}}>
             <CardContent>
               <Box
                 sx={{
@@ -701,13 +701,13 @@ export function AccountDetailsForm(): React.JSX.Element {
               </Box>
             </CardContent>
 
-            <Divider orientation='vertical' flexItem/>
+            <Divider orientation={{xs: 'horizontal', sm: 'vertical'}} flexItem/>
 
             <CardContent>
               <Typography variant="body1">Choose Border</Typography>
 
               <Grid direction="row" container spacing={3}>
-                <Grid sm={4} xs={8}>
+                <Grid sm={4} xs={6}>
                   <IconButton onClick={() => { updateBorderChange(null); }} sx={(draftCosmetic.profile_border?.image.name === null || draftCosmetic.profile_border?.image.name === '') ? {backgroundColor : theme.palette.action.selected} : null}>
                     <Box
                       sx={{
@@ -726,7 +726,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
                 {
                   borderList?.map((item: Cosmetic) => (
-                    <Grid key={item.type.toString() + item.id.toString()} sm={4} xs={8}>
+                    <Grid key={item.type.toString() + item.id.toString()} sm={4} xs={6}>
                       <IconButton onClick={() => { updateBorderChange(item); }} sx={(draftCosmetic.profile_border?.image.name !== null && draftCosmetic.profile_border?.image.id === item.image.id) ? {backgroundColor : theme.palette.action.selected} : null}>
                         <Box
                           sx={{
@@ -775,7 +775,7 @@ export function AccountDetailsForm(): React.JSX.Element {
             </Stack>
         </DialogTitle>
         <DialogContent>
-          <Card sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+          <Card sx={{ display: 'flex', flexDirection: {xs: 'column', sm: 'row'}, alignItems: 'center'}}>
             <CardContent>
               <Stack>
                   <Grid 
@@ -828,13 +828,13 @@ export function AccountDetailsForm(): React.JSX.Element {
               </Stack>
             </CardContent>
 
-            <Divider orientation='vertical' flexItem/>
+            <Divider orientation={{xs: 'horizontal', sm: 'vertical'}} flexItem/>
 
             <CardContent>
               <Typography variant="body1">Choose Banner</Typography>
 
               <Grid direction="row" container spacing={3}>
-                <Grid xs={12} sm={8} md={4}>
+                <Grid xs={8} sm={8} md={4}>
 	                  <Button onClick={() => { updateBannerChange(null); }} sx={(draftCosmetic.banner?.image.name === null || draftCosmetic.banner?.image.name === '') ? {backgroundColor : theme.palette.action.selected} : null}>
 	                    <Grid 
 	                      direction="row"
@@ -852,7 +852,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
                 {
                   bannerList?.map((item: Cosmetic) => (
-                    <Grid key={item.type.toString() + item.id.toString()} xs={12} sm={8} md={4}>
+                    <Grid key={item.type.toString() + item.id.toString()} xs={8} sm={8} md={4}>
                       <Button onClick={() => { updateBannerChange(item); }} sx={(draftCosmetic.banner?.image.name !== null && draftCosmetic.banner?.image.id === item.image.id) ? {backgroundColor : theme.palette.action.selected} : null}>
                         <Grid
 	                        direction="row" 
@@ -900,39 +900,63 @@ export function AccountDetailsForm(): React.JSX.Element {
                 {badgesSelected.map((badge, index) => (
                   <Box
                     key={badge.id.toString()}
-                    draggable
-                    onDragStart={() => {
+                    data-index={index}
+                    onPointerDown={(e) => {
+                      e.currentTarget.setPointerCapture(e.pointerId);
                       dragItemIndex.current = index;
                     }}
-                    onDragEnter={() => {
-                      dragOverIndex.current = index;
+
+                    onPointerMove={(e) => {
+                      if (dragItemIndex.current === null) return;
+
+                      const el = document.elementFromPoint(
+                        e.clientX,
+                        e.clientY
+                      );
+
+                      const target = el?.closest("[data-index]");
+
+                      if (!target) return;
+
+                      dragOverIndex.current = Number(
+                        target.getAttribute("data-index")
+                      );
                     }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                    }}
-                    onDragEnd={() => {
+
+                    onPointerUp={(e) => {
+                      e.currentTarget.releasePointerCapture(e.pointerId);
+
                       const from = dragItemIndex.current;
                       const to = dragOverIndex.current;
 
-                      if (from === null || to === null || from === to) return;
-
-                      moveBadge(from, to);
+                      if (
+                        from !== null &&
+                        to !== null &&
+                        from !== to
+                      ) {
+                        moveBadge(from, to);
+                      }
 
                       dragItemIndex.current = null;
                       dragOverIndex.current = null;
                     }}
+                    onPointerCancel={() => {
+                      dragItemIndex.current = null;
+                    }}
                     sx={{
                       width: 64,
                       height: 64,
+                      touchAction: "none",
+                      userSelect: "none",
+                      WebkitUserSelect: "none",
                       cursor: "grab",
-                      "&:active": { cursor: "grabbing" },
                     }}
                   >
                     <Typography variant="caption" sx={{ textAlign: 'center' }}>{index + 1}</Typography>
                     <Box
                       component="img"
                       src={`/assets/${badge.image.filename}`}
-                      sx={{ width: 64, height: 64 }}
+                      sx={{ width: 64, height: 64, pointerEvents: "none", }}
                     />
                   </Box>
                 ))}

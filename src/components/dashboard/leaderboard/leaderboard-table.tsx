@@ -237,6 +237,7 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
                                             position: 'relative',
                                             width: 72,
                                             height: 72,
+                                            aspectRatio: '1 / 1',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',

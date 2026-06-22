@@ -187,6 +187,7 @@ export function LeaderboardTableQuest({ quest }: LeaderboardTableQuestProps): Re
                                                 position: 'relative',
                                                 width: 72,
                                                 height: 72,
+                                                aspectRatio: '1 / 1',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',

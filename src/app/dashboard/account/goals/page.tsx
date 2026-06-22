@@ -116,16 +116,18 @@ export default function Page(): React.JSX.Element {
             <CardContent sx={{pb: '16px'}}>
                 <Stack direction="row" justifyContent="space-around">
                     <Grid container spacing={3}>
-                        <Grid xs={12}>
+                        <Grid md={6} sm={10} xs={12}>
                             <Typography variant="body1">Current Streak: {eduquestUser?.daily_checkin_streak}</Typography>
                             <Typography variant="body1">Longest streak: {eduquestUser?.daily_checkin_longest_streak}</Typography>
                         </Grid>
-                    </Grid>
 
-                    <ReactCalendar
-                        tileClassName={tileClassName}
-                        tileDisabled={tileDisabled}
-                    />
+                        <Grid md={6} sm={10} xs={12}>
+                            <ReactCalendar
+                                tileClassName={tileClassName}
+                                tileDisabled={tileDisabled}
+                            />
+                        </Grid>
+                    </Grid>
                 </Stack>
             </CardContent>
         </Card>

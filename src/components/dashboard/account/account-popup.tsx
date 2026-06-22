@@ -89,7 +89,7 @@ export function AccountPopup({eduquestUser, cosmetic, editable=false, draftCosme
     }
 
     return (
-        <Card sx={{ width: '25em' }}>
+        <Card sx={{ minWidth: '15em', maxWidth: '25em' }}>
             <Stack
                 divider={
                     <Box
@@ -110,6 +110,7 @@ export function AccountPopup({eduquestUser, cosmetic, editable=false, draftCosme
                                 position: 'relative',
                                 width: 100,
                                 height: 100,
+                                aspectRatio: '1 / 1',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -122,7 +123,7 @@ export function AccountPopup({eduquestUser, cosmetic, editable=false, draftCosme
                                 : cosmetic?.profile_picture?.image?.filename ?
                                     <Avatar
                                     src={`/assets/${cosmetic.profile_picture?.image.filename}`}
-                                    sx={{width: 70, height: 70}}
+                                    sx={{ width: 70 , height: 70 }}
                                     /> : <UserIcon size={70} color="var(--mui-palette-primary-main)" />
                                 }
                             </Box>
@@ -133,10 +134,11 @@ export function AccountPopup({eduquestUser, cosmetic, editable=false, draftCosme
                                         src={`/assets/${cosmetic?.profile_border.image.filename}`}
                                         sx={{
                                             position: 'absolute',
-                                            width: 100,
-                                            height: 100,
+                                            width: '100%',
+                                            height: '100%',
                                             top: 0,
                                             left: 0,
+                                            objectFit: 'contain',
                                             pointerEvents: 'none',
                                             zIndex: 1,
                                         }}
