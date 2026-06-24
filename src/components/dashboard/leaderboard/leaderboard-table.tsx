@@ -12,7 +12,6 @@ import Popover from '@mui/material/Popover/Popover';
 import type { UserCourseGroupEnrollment } from '@/types/user-course-group-enrollment';
 import { getUserCourseGroupEnrollmentsByCourseGroup } from '@/api/services/user-course-group-enrollment';
 import {logger} from "@/lib/default-logger";
-import type { Course } from "@/types/course";
 import { AccountPopup } from '../account/account-popup';
 import { getEduquestUser, getEduquestCosmeticDetail } from '@/api/services/eduquest-user';
 import type { EduquestUser, EduquestUserCosmeticResult } from '@/types/eduquest-user';
@@ -24,12 +23,13 @@ import Stack from "@mui/material/Stack";
 import {getQuestsByCourseGroup} from '@/api/services/quest';
 import {getUserQuestAttemptsByUserAndQuest} from '@/api/services/user-quest-attempt';
 import {getTestScoresByCourseGroup, getUserTestScoresByTest} from '@/api/services/test-score';
+import type { CourseGroup } from '@/types/course-group';
 
 interface LeaderboardTableProps {
-  course: Course;
+  courseGroups: CourseGroup[];
 }
 
-export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.Element {
+export function LeaderboardTable({ courseGroups }: LeaderboardTableProps): React.JSX.Element {
     const theme = useTheme();
     const [rows, setRows] = React.useState<UserCourseGroupEnrollment[]>([])
     const [selected, setSelected] = React.useState<number>(-1);
@@ -76,22 +76,41 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
     };
 
     React.useEffect(() => {
+        if (!courseGroups) return;
+
         const fetchData = async () => {
             try {
-                const enrollments =
-                    await getUserCourseGroupEnrollmentsByCourseGroup(
-                        course.id.toString()
-                    );
+                let enrollments = (await Promise.all(
+                    courseGroups.map((courseGroup) =>
+                        getUserCourseGroupEnrollmentsByCourseGroup(
+                            courseGroup.id.toString()
+                        )
+                    )
+                )).flat();
+                
+                // Prevent duplicate if user belongs in multiple groups (which shouldn't be the case anyways)
+                enrollments = Array.from(
+                    new Map(
+                        enrollments.map((e) => [e.student_id, e])
+                    ).values()
+                );
 
                 setRows(enrollments);
 
-                const quests = 
-                    await getQuestsByCourseGroup(
-                        course.id.toString()
-                    );
-
+                const quests = (await Promise.all(
+                    courseGroups.map((courseGroup) =>
+                        getQuestsByCourseGroup(
+                            courseGroup.id.toString()
+                        )
+                    )
+                )).flat();
                 
-                const testScoresList = await getTestScoresByCourseGroup(course.id.toString());
+                const testScoresList = (await Promise.all(
+                    courseGroups.map((courseGroup) =>
+                        getTestScoresByCourseGroup(courseGroup.id.toString())
+                    )
+                )).flat();
+
                 const testWeightMap = Object.fromEntries(
                     testScoresList.map((t) => [t.id, t.weightage ?? 0])
                 );
@@ -164,7 +183,7 @@ export function LeaderboardTable({ course }: LeaderboardTableProps): React.JSX.E
         };
 
         fetchData().catch(() => { return; });
-    }, [course.id]);
+    }, [courseGroups]);
 
     const sortedRows = React.useMemo(
         () => {

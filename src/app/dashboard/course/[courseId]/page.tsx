@@ -446,7 +446,7 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
             />
         
             <CardContent sx={{pb: '16px'}}>
-              <LeaderboardTable course={course} />
+              <LeaderboardTable courseGroups={courseGroups} />
             </CardContent>
           </Card>
           : null}
