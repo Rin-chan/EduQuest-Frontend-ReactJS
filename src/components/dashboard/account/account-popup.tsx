@@ -116,19 +116,8 @@ export function AccountPopup({eduquestUser, cosmetic, editable=false, draftCosme
                                 justifyContent: 'center',
                             }}
                         >
-                            <Box>
-                                {
-                                showUserInitials ?
-                                    <UserAvatar size='70px' {...userAvatarProps}/>
-                                : cosmetic?.profile_picture?.image?.filename ?
-                                    <Avatar
-                                    src={`/assets/${cosmetic.profile_picture?.image.filename}`}
-                                    sx={{ width: 70 , height: 70 }}
-                                    /> : <UserIcon size={70} color="var(--mui-palette-primary-main)" />
-                                }
-                            </Box>
                             {
-                                cosmetic?.profile_border?.image ?
+                                cosmetic?.profile_border?.image?.filename ?
                                     <Box
                                         component="img"
                                         src={`/assets/${cosmetic?.profile_border.image.filename}`}
@@ -144,6 +133,16 @@ export function AccountPopup({eduquestUser, cosmetic, editable=false, draftCosme
                                         }}
                                     />
                                 : null
+                            }
+
+                            {
+                            showUserInitials ?
+                                <UserAvatar size='70px' {...userAvatarProps}/>
+                            : cosmetic?.profile_picture?.image?.filename ?
+                                <Avatar
+                                src={`/assets/${cosmetic.profile_picture?.image.filename}`}
+                                sx={{ width: 70 , height: 70 }}
+                                /> : <UserIcon size={70} color="var(--mui-palette-primary-main)" />
                             }
                         </Box>
 

@@ -376,6 +376,7 @@ export function AccountDetailsForm(): React.JSX.Element {
                       position: 'relative',
                       width: 72,
                       height: 72,
+                      aspectRatio: '1 / 1',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -388,10 +389,11 @@ export function AccountDetailsForm(): React.JSX.Element {
                         src={`/assets/${draftCosmetic.profile_border.image.filename}`}
                         sx={{
                           position: 'absolute',
-                            width: 72,
-                            height: 72,
+                            width: '100%',
+                                            height: '100%',
                             top: 0,
                             left: 0,
+                            objectFit: 'contain',
                             pointerEvents: 'none',
                             zIndex: 1,
                         }}
