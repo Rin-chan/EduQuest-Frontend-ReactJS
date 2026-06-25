@@ -26,7 +26,7 @@ import {getTestScoresByCourseGroup, getUserTestScoresByTest} from '@/api/service
 import type { CourseGroup } from '@/types/course-group';
 
 interface LeaderboardTableProps {
-  courseGroups: CourseGroup[];
+  courseGroups: CourseGroup[] | null | undefined;
 }
 
 export function LeaderboardTable({ courseGroups }: LeaderboardTableProps): React.JSX.Element {
