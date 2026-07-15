@@ -602,7 +602,7 @@ export function AccountDetailsForm(): React.JSX.Element {
               <Typography variant="body1">Choose Preset</Typography>
 
               <Grid direction="row" container>
-                <Grid sm={4} xs={4}>
+                <Grid sm={6} xs={6}>
 	                <IconButton onClick={() => { updateAvatarChange(null); }} sx={(draftCosmetic.profile_picture?.image.name === null || draftCosmetic.profile_picture?.image.name === '') ? {backgroundColor : theme.palette.action.selected} : null}>
                     <UserAvatar size='48px' {...userAvatarProps}/>
                   </IconButton>
@@ -610,7 +610,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
                 {
                   avatarList.map((item: Cosmetic) => (
-                    <Grid key={item.type.toString() + item.id.toString()} sm={4} xs={4}>
+                    <Grid key={item.type.toString() + item.id.toString()} sm={6} xs={6}>
                       <IconButton onClick={() => { updateAvatarChange(item)  }} sx={(draftCosmetic.profile_picture?.image.name !== null && item.image.id === draftCosmetic.profile_picture?.image?.id) ? {backgroundColor : theme.palette.action.selected} : null}>
                         <Avatar
                           alt={item.image.filename}
@@ -737,7 +737,7 @@ export function AccountDetailsForm(): React.JSX.Element {
               <Typography variant="body1">Choose Border</Typography>
 
               <Grid direction="row" container spacing={3}>
-                <Grid sm={4} xs={6}>
+                <Grid sm={6} xs={6}>
                   <IconButton onClick={() => { updateBorderChange(null); }} sx={(draftCosmetic.profile_border?.image.name === null || draftCosmetic.profile_border?.image.name === '') ? {backgroundColor : theme.palette.action.selected} : null}>
                     <Box
                       sx={{
@@ -756,7 +756,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
                 {
                   borderList?.map((item: Cosmetic) => (
-                    <Grid key={item.type.toString() + item.id.toString()} sm={4} xs={6}>
+                    <Grid key={item.type.toString() + item.id.toString()} sm={6} xs={6}>
                       <IconButton onClick={() => { updateBorderChange(item); }} sx={(draftCosmetic.profile_border?.image.name !== null && draftCosmetic.profile_border?.image.id === item.image.id) ? {backgroundColor : theme.palette.action.selected} : null}>
                         <Box
                           sx={{
@@ -878,7 +878,7 @@ export function AccountDetailsForm(): React.JSX.Element {
               <Typography variant="body1">Choose Banner</Typography>
 
               <Grid direction="row" container spacing={3}>
-                <Grid xs={8} sm={8} md={4}>
+                <Grid xs={10} sm={10} md={6}>
 	                  <Button onClick={() => { updateBannerChange(null); }} sx={(draftCosmetic.banner?.image.name === null || draftCosmetic.banner?.image.name === '') ? {backgroundColor : theme.palette.action.selected} : null}>
 	                    <Grid 
 	                      direction="row"
@@ -896,7 +896,7 @@ export function AccountDetailsForm(): React.JSX.Element {
 
                 {
                   bannerList?.map((item: Cosmetic) => (
-                    <Grid key={item.type.toString() + item.id.toString()} xs={8} sm={8} md={4}>
+                    <Grid key={item.type.toString() + item.id.toString()} xs={10} sm={10} md={6}>
                       <Button onClick={() => { updateBannerChange(item); }} sx={(draftCosmetic.banner?.image.name !== null && draftCosmetic.banner?.image.id === item.image.id) ? {backgroundColor : theme.palette.action.selected} : null}>
                         <Grid
 	                        direction="row" 
