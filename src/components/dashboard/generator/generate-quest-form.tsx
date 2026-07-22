@@ -453,7 +453,7 @@ export function GenerateQuestForm({onFormSubmitSuccess}: CourseFormProps): React
                 Generate quest from the uploaded document through LLM. Model used:
               </Typography>
               <Typography variant="body2" color="text.secondary" fontWeight={600} ml={1}>
-               GPT 3.5 Turbo 16K
+               GPT 5.4
               </Typography>
             </Box>
           }
