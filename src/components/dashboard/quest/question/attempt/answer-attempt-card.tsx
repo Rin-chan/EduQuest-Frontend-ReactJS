@@ -69,7 +69,6 @@ const parseKaTeX = (text: string): React.ReactNode[] => {
   const parts = text.split(/(?<katex>\$[^$]+\$|\\\([\s\S]*?\\\))/g);
 
   return parts.map((part, index) => {
-    console.log(part)
     if (part.startsWith('\\(') && part.endsWith('\\)')) {
       return (
         <InlineMath
