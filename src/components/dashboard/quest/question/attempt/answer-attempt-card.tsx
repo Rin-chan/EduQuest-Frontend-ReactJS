@@ -66,14 +66,24 @@ interface GroupedQuestion {
  * @returns An array of React elements.
  */
 const parseKaTeX = (text: string): React.ReactNode[] => {
-  const parts = text.split(/(?<katex>\\\([\s\S]*?\\\))/g);
+  const parts = text.split(/(?<katex>\$[^$]+\$|\\\([\s\S]*?\\\))/g);
 
   return parts.map((part, index) => {
+    console.log(part)
     if (part.startsWith('\\(') && part.endsWith('\\)')) {
       return (
         <InlineMath
           key={index}
           math={part.slice(2, -2)}
+        />
+      );
+    }
+
+    if (part.startsWith("$") && part.endsWith("$")) {
+      return (
+        <InlineMath
+          key={index}
+          math={part.slice(1, -1)}
         />
       );
     }
