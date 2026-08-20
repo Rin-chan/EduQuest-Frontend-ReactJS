@@ -16,7 +16,7 @@ export interface GuestGuardProps {
 
 export function GuestGuard({ children, onError }: GuestGuardProps): React.JSX.Element | null {
   const router = useRouter();
-  const { user, error, isLoading } = useUser();
+  const { user, error, isLoading, eduquestUser } = useUser();
   const [isChecking, setIsChecking] = React.useState<boolean>(true);
 
   const checkPermissions = async (): Promise<void> => {
@@ -32,13 +32,22 @@ export function GuestGuard({ children, onError }: GuestGuardProps): React.JSX.El
       return;
     }
 
-    if (user) {
-      logger.debug('[GuestGuard]: User is logged in, redirecting to dashboard');
-      router.replace(paths.dashboard.overview);
-      return;
+    if (user && eduquestUser) {
+      if (eduquestUser.consent) {
+        logger.debug('[GuestGuard]: User is logged in, redirecting to dashboard');
+        router.replace(paths.dashboard.overview);
+        return;
+      }
+      else {
+        setIsChecking(false);
+        logger.debug('[GuestGuard]: User is logged in, but has not consented to the form');
+        router.replace(paths.auth.consent);
+        return;
+      }
     }
 
     setIsChecking(false);
+    router.replace(paths.auth.signIn);
   };
 
   React.useEffect(() => {

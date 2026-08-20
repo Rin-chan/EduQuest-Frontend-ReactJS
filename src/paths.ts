@@ -3,6 +3,7 @@ export const paths = {
   auth: {
     signIn: '/auth/sign-in',
     demoSignIn: '/auth/demo-sign-in',
+    consent: '/auth/consent',
   },
   dashboard: {
     overview: '/dashboard',

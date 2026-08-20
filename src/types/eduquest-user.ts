@@ -23,6 +23,7 @@ export interface EduquestUser extends EduquestUserSummary {
   daily_checkin_longest_streak: number;
   daily_checkin_last_date: string | null;
   daily_goals: UserGoals[];
+  consent: boolean;
 }
 
 export interface EduquestUserSummary {

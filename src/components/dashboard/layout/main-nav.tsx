@@ -18,6 +18,8 @@ import {UserPopover} from './user-popover';
 import { LinearProgressForLevel, } from "@/components/dashboard/misc/linear-progress-with-label";
 import {User as UserIcon} from "@phosphor-icons/react/dist/ssr/User";
 import { dailyCheckIn } from '@/api/services/eduquest-user';
+import { useRouter } from 'next/navigation';
+import { paths } from '@/paths';
 
 export function MainNav(): React.JSX.Element {
   const [openNav, setOpenNav] = React.useState<boolean>(false);
@@ -30,6 +32,7 @@ export function MainNav(): React.JSX.Element {
   const { eduquestUser, cosmetic } = useUser();
   const { mode, setMode } = useColorScheme();
 
+  const router = useRouter();
 
   function formatName(name: string | undefined): string {
     if (!name) return '';
@@ -109,6 +112,15 @@ export function MainNav(): React.JSX.Element {
       }
     }
   }, [eduquestUser]);
+
+  React.useEffect(() => {
+    if (eduquestUser) {
+      if (!eduquestUser.consent) {
+        router.replace(paths.auth.consent);
+        return;
+      }
+    }
+  }, [eduquestUser, router])
 
   return (
     <React.Fragment>

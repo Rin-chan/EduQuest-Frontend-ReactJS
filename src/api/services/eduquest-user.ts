@@ -58,3 +58,8 @@ export const updateUserCosmetic = async (cosmetic: EduquestUserCosmeticResult): 
   const response = await apiService.post<EduquestUserCosmeticResult>('/api/eduquest-users/update-cosmetic/', { cosmetic: cosmetic });
   return response.data;
 }
+
+export const updateEduQuestConsent = async (): Promise<EduquestUser> => {
+    const response = await apiService.post<EduquestUser>(`/api/eduquest-users/update_consent/`);
+    return response.data;
+}
