@@ -103,11 +103,11 @@ export function ConsentForm({ error1 }: ConsentFormProps): React.JSX.Element {
                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Introduction</Typography>
                     <Typography variant="body2">You are invited to join our research study. Please read and understand this information sheet carefully. We will explain the study, answer your questions, and provide a Consent Form to sign when you are ready. You will receive a copy to take home.</Typography>
                     <br/>
-                    <Typography variant="body2">You are invited because you are currently studying MH1100 Calculus I in AY2026/2027</Typography>
+                    <Typography variant="body2">You are invited because you are currently studying MH5200 Advanced Investigations in Linear Algebra I in AY2026/2027</Typography>
                     <br/>
                     <Typography variant="body2">This research aims to investigate the effectiveness of using large language models (LLM) in education through generating self-study quizzes, providing feedback based on their answers as well as the effectiveness of gamification in education. By understanding the effectiveness and limitations of the current state of LLM and gamification in education, more and better planning can be done to improve education.</Typography>
                     <br/>
-                    <Typography variant="body2">We plan to recruit 300 participants from MH1100 Calculus I, School of Physics and Mathematical Sciences, NTU over a period of August 2026 to October 2026.</Typography>
+                    <Typography variant="body2">We plan to recruit 300 participants from MH5200 Advanced Investigations in Linear Algebra I, School of Physics and Mathematical Sciences, NTU over a period of August 2026 to October 2026.</Typography>
                 </Stack>
                 <br/>
 
