@@ -37,7 +37,9 @@ import type { BonusGame } from "@/types/bonus-game";
 import { CaretUp as CaretUpIcon } from "@phosphor-icons/react/dist/ssr/CaretUp";
 import { CaretDown as CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { updateDailyGoals } from '@/api/services/eduquest-user';
-
+import type { MathSymbol } from '@/types/math-symbol';
+import { symbols1, symbols2, symbols3, symbols4, symbols5, symbols6, symbols7, symbols8, symbols9, symbols10, symbols11, symbols12, symbols13 } from '@/constants';
+import Paper from '@mui/material/Paper';
 
 interface AnswerAttemptCardProps {
   data: UserAnswerAttempt[] | UserShortAnswerAttempt[];
@@ -106,6 +108,8 @@ export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, on
   const [matchingSelections, setMatchingSelections] = React.useState<Record<number, string>>({});
   const [matchingOptions, setMatchingOptions] = React.useState<string[]>([]);
   const [orderingItems, setOrderingItems] = React.useState<string[]>([]);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [hoveredRow, setHoveredRow] = React.useState<number | null>(null);
 
   // 1. Group UserAnswerAttempt by Question using useMemo
   const groupedQuestions: GroupedQuestion[] = React.useMemo(() => {
@@ -506,6 +510,57 @@ export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, on
     }
   };
 
+  // Inserts LaTeX template at current cursor position
+  const insertSymbol = (symbol: MathSymbol, attemptId: number, answerId: number, text: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    const newText = text.substring(0, start) + symbol.display + text.substring(end);
+    handleTextFieldChange(attemptId, answerId, newText);
+
+    // Refocus and position the cursor inside the brackets
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + symbol.offset;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  const symbolGroups: MathSymbol[][] = [
+    symbols1,
+    symbols2,
+    symbols3,
+    symbols4,
+    symbols5,
+    symbols6,
+    symbols7,
+    symbols8,
+    symbols9,
+    symbols10,
+    symbols11,
+    symbols12,
+    symbols13,
+  ];
+
+  const visibleCounts = [
+    6, // symbols1
+    4, // symbols2
+    6, // symbols3
+    5, // symbols4
+    2, // symbols5
+    3, // symbols6
+    2, // symbols7
+    3, // symbols8
+    5, // symbols9
+    3, // symbols10
+    2, // symbols11
+    2, // symbols12
+    2, // symbols13
+  ];
+
   return (
     <form onSubmit={handleSubmit}>
       <FormGroup>
@@ -579,7 +634,114 @@ export function AnswerAttemptCard({ data, userQuestAttemptId, onAnswerChange, on
                                 fullWidth
                                 required
                               >
+                                <Stack direction="row" sx={{ flexWrap: 'wrap' }}>
+                                  {symbolGroups.map((symbols: MathSymbol[], rowIndex: number) => {
+                                    const visibleCount = visibleCounts[rowIndex];
+
+                                    const visibleSymbols = symbols.slice(0, visibleCount);
+                                    const hiddenSymbols = symbols.slice(visibleCount);
+
+                                    return (
+                                      <Box
+                                        key={rowIndex}
+                                        sx={{
+                                          position: "relative",
+                                          width: "fit-content",
+                                          paddingRight: 1,
+                                          paddingLeft: 1,
+                                        }}
+                                        onMouseEnter={() => {setHoveredRow(rowIndex)}}
+                                        onMouseLeave={() => {setHoveredRow(null)}}
+                                      >
+                                        <Stack
+                                          direction="row"
+                                          spacing={0.5}
+                                          sx={{
+                                            height: 32,
+                                          }}
+                                        >
+                                          {visibleSymbols.map((sym: MathSymbol, idx: number) => (
+                                            <Button
+                                              key={`${rowIndex.toString()}-${idx.toString()}`}
+                                              size="small"
+                                              variant="outlined"
+                                              onClick={() =>
+                                                {insertSymbol(
+                                                  sym,
+                                                  unstructuredanswer?.id ?? -1,
+                                                  unstructuredanswer?.unstructuredanswer?.id ?? -1,
+                                                  unstructuredanswer?.text ?? ""
+                                                )}
+                                              }
+                                              sx={{
+                                                minWidth: 34,
+                                                width: 34,
+                                                height: 30,
+                                                p: 0,
+                                              }}
+                                            >
+                                              {parseKaTeX(sym.display)}
+                                            </Button>
+                                          ))}
+                                        </Stack>
+
+                                        {hiddenSymbols.length > 0 && (
+                                          <Paper
+                                            elevation={6}
+                                            sx={{
+                                              position: "absolute",
+                                              top: "100%",
+                                              left: 0,
+                                              zIndex: 1,
+
+                                              display: hoveredRow === rowIndex ? "flex" : "none",
+
+                                              flexWrap: "wrap",
+                                              gap: 0.5,
+
+                                              p: 0.75,
+                                              mt: 0.25,
+
+                                              maxWidth: 500,
+                                            }}
+                                            onMouseEnter={() => {setHoveredRow(rowIndex)}}
+                                          >
+                                            {hiddenSymbols.map((sym: MathSymbol, idx: number) => (
+                                              <Button
+                                                key={`${rowIndex.toString()}-hidden-${idx.toString()}`}
+                                                size="small"
+                                                variant="outlined"
+                                                onClick={() =>
+                                                  {insertSymbol(
+                                                    sym,
+                                                    unstructuredanswer?.id ?? -1,
+                                                    unstructuredanswer?.unstructuredanswer?.id ?? -1,
+                                                    unstructuredanswer?.text ?? ""
+                                                  )}
+                                                }
+                                                sx={{
+                                                  minWidth: 34,
+                                                  width: 34,
+                                                  height: 30,
+                                                  p: 0,
+                                                }}
+                                              >
+                                                {parseKaTeX(sym.display)}
+                                              </Button>
+                                            ))}
+                                          </Paper>
+                                        )}
+                                      </Box>
+                                    );
+                                  })}
+
+
+                                </Stack>
+                                <Stack sx={{ p: 1}} direction="row">
+                                  {parseKaTeX(unstructuredanswer?.text ?? '')}
+                                </Stack>
                                 <TextField
+                                    inputRef={textareaRef}
                                     value={unstructuredanswer?.text ?? ''}
                                     variant='outlined'
                                     multiline
