@@ -17,9 +17,6 @@ import {MobileNav} from './mobile-nav';
 import {UserPopover} from './user-popover';
 import { LinearProgressForLevel, } from "@/components/dashboard/misc/linear-progress-with-label";
 import {User as UserIcon} from "@phosphor-icons/react/dist/ssr/User";
-import { dailyCheckIn } from '@/api/services/eduquest-user';
-import { useRouter } from 'next/navigation';
-import { paths } from '@/paths';
 
 export function MainNav(): React.JSX.Element {
   const [openNav, setOpenNav] = React.useState<boolean>(false);
@@ -31,8 +28,6 @@ export function MainNav(): React.JSX.Element {
   });
   const { eduquestUser, cosmetic } = useUser();
   const { mode, setMode } = useColorScheme();
-
-  const router = useRouter();
 
   function formatName(name: string | undefined): string {
     if (!name) return '';
@@ -91,36 +86,7 @@ export function MainNav(): React.JSX.Element {
     fetchData().catch((error: unknown) => {
       logger.error('Failed to fetch data', error);
     });
-  }, [setUserPhotoAvatar])
-
-  React.useEffect(() => {
-    if (eduquestUser) {
-      try {
-        const fetchCheckInStatus = async (): Promise<void> => {
-          await dailyCheckIn();
-        };
-
-        fetchCheckInStatus().catch((error: unknown) => {
-          logger.error('Failed to fetch daily check-in status', error);
-        });
-
-        const intervalId = setInterval(fetchCheckInStatus, 300000); // Fetch data every 5 minutes
-
-        return () => { clearInterval(intervalId); }; // Clear interval on component unmount
-      } catch (error: unknown) {
-        logger.error('Daily check-in failed', error);
-      }
-    }
-  }, [eduquestUser]);
-
-  React.useEffect(() => {
-    if (eduquestUser) {
-      if (!eduquestUser.consent) {
-        router.replace(paths.auth.consent);
-        return;
-      }
-    }
-  }, [eduquestUser, router])
+  }, [setUserPhotoAvatar]);
 
   return (
     <React.Fragment>
