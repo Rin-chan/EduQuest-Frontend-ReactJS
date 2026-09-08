@@ -63,6 +63,7 @@ export default function Page({ params }: { params: { questId: string } }) : Reac
   const [submitStatus, setSubmitStatus] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showEditQuestForm, setShowEditQuestForm] = React.useState(false);
   const [showNewQuestionForm, setShowNewQuestionForm] = React.useState(false);
+  const [hideLeaderboard, setHideLeaderboard] = React.useState(true);
 
   const [loadingCourseEnrollments, setLoadingCourseEnrollments] = React.useState(true);
   const [loadingQuest, setLoadingQuest] = React.useState(true);
@@ -687,7 +688,14 @@ export default function Page({ params }: { params: { questId: string } }) : Reac
             />
         
             <CardContent sx={{pb: '16px'}}>
-              <LeaderboardTableQuest quest={quest} />
+            {
+              hideLeaderboard ?
+              <Button variant="text" onClick={() => {setHideLeaderboard(false)}}>
+                Show Leaderboard
+              </Button>
+              :
+              <LeaderboardTableQuest quest={quest} hideLeaderboard={hideLeaderboard} />
+            }
             </CardContent>
         </Card>
         : null

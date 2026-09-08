@@ -27,14 +27,15 @@ import type { CourseGroup } from '@/types/course-group';
 
 interface LeaderboardTableProps {
   courseGroups: CourseGroup[] | null | undefined;
+  hideLeaderboard: boolean;
 }
 
-export function LeaderboardTable({ courseGroups }: LeaderboardTableProps): React.JSX.Element {
+export function LeaderboardTable({ courseGroups, hideLeaderboard }: LeaderboardTableProps): React.JSX.Element {
     const theme = useTheme();
     const [rows, setRows] = React.useState<UserCourseGroupEnrollment[]>([])
     const [selected, setSelected] = React.useState<number>(-1);
     const [page, setPage] = React.useState<number>(0);
-    const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
+    const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
     const [anchorElPosHorizontal, setAnchorElPosHorizontal] = React.useState<number>(0);
     const [anchorElPosVertical, setAnchorElPosVertical] = React.useState<number>(0);
 
@@ -75,7 +76,7 @@ export function LeaderboardTable({ courseGroups }: LeaderboardTableProps): React
         setSelected(row.student_id);
     };
 
-    React.useEffect(() => {
+    const showLeaderboard = () => {
         if (!courseGroups) return;
 
         const fetchData = async () => {
@@ -183,7 +184,7 @@ export function LeaderboardTable({ courseGroups }: LeaderboardTableProps): React
         };
 
         fetchData().catch(() => { return; });
-    }, [courseGroups]);
+    };
 
     const sortedRows = React.useMemo(
         () => {
@@ -216,7 +217,11 @@ export function LeaderboardTable({ courseGroups }: LeaderboardTableProps): React
         [sortedRows, page, rowsPerPage]
     );
 
-  return (
+    React.useMemo(() => {
+        if(!hideLeaderboard) {showLeaderboard()};
+    }, [hideLeaderboard])
+
+    return (
     <Box>
 
         <Paper sx={{ width: '100%', mb: 2 }}>

@@ -23,15 +23,16 @@ import Stack from "@mui/material/Stack";
 import type { UserQuestAttempt } from '@/types/user-quest-attempt';
 
 interface LeaderboardTableQuestProps {
-  quest: Quest;
+    quest: Quest;
+    hideLeaderboard: boolean;
 }
 
-export function LeaderboardTableQuest({ quest }: LeaderboardTableQuestProps): React.JSX.Element {
+export function LeaderboardTableQuest({ quest, hideLeaderboard }: LeaderboardTableQuestProps): React.JSX.Element {
     const theme = useTheme();
     const [rows, setRows] = React.useState<UserQuestAttempt[]>([])
     const [selected, setSelected] = React.useState<number>(-1);
     const [page, setPage] = React.useState<number>(0);
-    const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
+    const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
     const [anchorElPosHorizontal, setAnchorElPosHorizontal] = React.useState<number>(0);
     const [anchorElPosVertical, setAnchorElPosVertical] = React.useState<number>(0);
 
@@ -72,7 +73,7 @@ export function LeaderboardTableQuest({ quest }: LeaderboardTableQuestProps): Re
         setSelected(row.student_id);
     };
 
-    React.useEffect(() => {
+    const showLeaderboard = () => {
         const fetchData = async () => {
             try {
                 const enrollments =
@@ -115,7 +116,7 @@ export function LeaderboardTableQuest({ quest }: LeaderboardTableQuestProps): Re
         };
 
         fetchData().catch(() => { return; });
-    }, [quest.id]);
+    };
 
     const sortedRows = React.useMemo(() => {
         return [...rows].sort((a, b) => {
@@ -147,6 +148,10 @@ export function LeaderboardTableQuest({ quest }: LeaderboardTableQuestProps): Re
         [sortedRows, page, rowsPerPage]
     );
 
+    React.useMemo(() => {
+        if(!hideLeaderboard) {showLeaderboard()};
+    }, [hideLeaderboard])
+    
     return (
         <Box>
 

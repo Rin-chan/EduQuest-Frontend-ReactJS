@@ -92,6 +92,7 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
   const [selectedCourseGroupId, setSelectedCourseGroupId] = React.useState<string | null>(null);
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [openTestOption, setOpenTestOption] = React.useState(false);
+  const [hideLeaderboard, setHideLeaderboard] = React.useState(true);
 
   const handleExpandClick = (): void => {
     setExpanded(!expanded);
@@ -444,9 +445,16 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
               title="Leaderboard"
               subheader="Overall ranking for the course"
             />
-        
+
             <CardContent sx={{pb: '16px'}}>
-              <LeaderboardTable courseGroups={courseGroups} />
+            {
+              hideLeaderboard ?
+              <Button variant="text" onClick={() => {setHideLeaderboard(false)}}>
+                Show Leaderboard
+              </Button>
+              :
+              <LeaderboardTable courseGroups={courseGroups} hideLeaderboard={hideLeaderboard} />
+            }
             </CardContent>
           </Card>
           : null}
