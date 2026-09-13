@@ -453,7 +453,7 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
                 Show Leaderboard
               </Button>
               :
-              <LeaderboardTable courseGroups={courseGroups} hideLeaderboard={hideLeaderboard} />
+              <LeaderboardTable course={course} hideLeaderboard={hideLeaderboard} />
             }
             </CardContent>
           </Card>

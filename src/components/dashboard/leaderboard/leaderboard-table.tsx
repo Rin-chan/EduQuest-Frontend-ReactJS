@@ -9,30 +9,25 @@ import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Popover from '@mui/material/Popover/Popover';
-import type { UserCourseGroupEnrollment } from '@/types/user-course-group-enrollment';
-import { getUserCourseGroupEnrollmentsByCourseGroup } from '@/api/services/user-course-group-enrollment';
 import {logger} from "@/lib/default-logger";
 import { AccountPopup } from '../account/account-popup';
-import { getEduquestUser, getEduquestCosmeticDetail } from '@/api/services/eduquest-user';
 import type { EduquestUser, EduquestUserCosmeticResult } from '@/types/eduquest-user';
 import {useTheme} from '@mui/material/styles';
 import {UserAvatar} from "@/components/auth/user-avatar";
 import Avatar from "@mui/material/Avatar";
 import {User as UserIcon} from "@phosphor-icons/react/dist/ssr/User";
 import Stack from "@mui/material/Stack";
-import {getQuestsByCourseGroup} from '@/api/services/quest';
-import {getUserQuestAttemptsByUserAndQuest} from '@/api/services/user-quest-attempt';
-import {getTestScoresByCourseGroup, getUserTestScoresByTest} from '@/api/services/test-score';
-import type { CourseGroup } from '@/types/course-group';
+import type { Course } from '@/types/course';
+import type { UserData } from '@/types/leaderboard';
+import { getCourseLeaderboard } from '@/api/services/leaderboard';
 
 interface LeaderboardTableProps {
-  courseGroups: CourseGroup[] | null | undefined;
+  course: Course;
   hideLeaderboard: boolean;
 }
 
-export function LeaderboardTable({ courseGroups, hideLeaderboard }: LeaderboardTableProps): React.JSX.Element {
+export function LeaderboardTable({ course, hideLeaderboard }: LeaderboardTableProps): React.JSX.Element {
     const theme = useTheme();
-    const [rows, setRows] = React.useState<UserCourseGroupEnrollment[]>([])
     const [selected, setSelected] = React.useState<number>(-1);
     const [page, setPage] = React.useState<number>(0);
     const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
@@ -41,13 +36,7 @@ export function LeaderboardTable({ courseGroups, hideLeaderboard }: LeaderboardT
 
     const [popupUser, setPopupUser] = React.useState<EduquestUser | null>(null);
     const [popupCosmetic, setPopupCosmetic] = React.useState<EduquestUserCosmeticResult | null>(null);
-    const [userDataMap, setUserDataMap] = React.useState<
-        Record<number, {
-            user: EduquestUser;
-            cosmetic: EduquestUserCosmeticResult | null;
-            score: number;
-        }>
-    >({});
+    const [userDataMap, setUserDataMap] = React.useState<Record<number, UserData>>({});
 
     function formatName(name: string | undefined): string {
         if (!name) return '';
@@ -57,127 +46,37 @@ export function LeaderboardTable({ courseGroups, hideLeaderboard }: LeaderboardT
 
     const handleClick = (
         event: React.MouseEvent<unknown>,
-        row: UserCourseGroupEnrollment
+        studentId: number
     ): void => {
-        if (selected === row.student_id) {
+        if (selected === studentId) {
             setSelected(-1);
             return;
         }
 
-        const data = userDataMap[row.student_id];
+        const data = userDataMap[studentId];
 
         if (data) {
-            setPopupUser(data.user);
-            setPopupCosmetic(data.cosmetic);
+            setPopupUser(data.user ?? null);
+            setPopupCosmetic(data.cosmetic ?? null);
         }
 
         setAnchorElPosHorizontal(event.clientX);
         setAnchorElPosVertical(event.clientY);
-        setSelected(row.student_id);
+        setSelected(studentId);
+
+        return;
     };
 
     const showLeaderboard = () => {
-        if (!courseGroups) return;
+        if (!course) return;
 
         const fetchData = async () => {
             try {
-                let enrollments = (await Promise.all(
-                    courseGroups.map((courseGroup) =>
-                        getUserCourseGroupEnrollmentsByCourseGroup(
-                            courseGroup.id.toString()
-                        )
-                    )
-                )).flat();
-                
-                // Prevent duplicate if user belongs in multiple groups (which shouldn't be the case anyways)
-                enrollments = Array.from(
-                    new Map(
-                        enrollments.map((e) => [e.student_id, e])
-                    ).values()
+                const data = await getCourseLeaderboard(
+                    course.id.toString()
                 );
 
-                setRows(enrollments);
-
-                const quests = (await Promise.all(
-                    courseGroups.map((courseGroup) =>
-                        getQuestsByCourseGroup(
-                            courseGroup.id.toString()
-                        )
-                    )
-                )).flat();
-                
-                const testScoresList = (await Promise.all(
-                    courseGroups.map((courseGroup) =>
-                        getTestScoresByCourseGroup(courseGroup.id.toString())
-                    )
-                )).flat();
-
-                const testWeightMap = Object.fromEntries(
-                    testScoresList.map((t) => [t.id, t.weightage ?? 0])
-                );
-                const allUserTestScores = await Promise.all(
-                    testScoresList.map(async (test) => {
-                        return await getUserTestScoresByTest(test.id.toString());
-                    })
-                );
-                const flattenedTestScores = allUserTestScores.flat();
-
-                const testScoreMap = flattenedTestScores.reduce<Record<number, number>>((acc, item) => {
-                    const studentId = item.student.id;
-                    const testId = item.test.id;
-
-                    const weightage = testWeightMap[testId] ?? 0;
-
-                    const weightedScore = (item.score ?? 0) * (weightage / 100);
-
-                    acc[studentId] = (acc[studentId] ?? 0) + weightedScore;
-
-                    return acc;
-                }, {});
-
-                const userDataEntries = await Promise.all(
-                    enrollments
-                        .filter((row) => row.student)
-                        .map(async (row) => {
-                            const [user, cosmetic] = await Promise.all([
-                                getEduquestUser(row.student_id.toString()),
-                                getEduquestCosmeticDetail(row.student!.email),
-                        ]);
-
-                        const attempts = await Promise.all(
-                            quests.map((quest) =>
-                                getUserQuestAttemptsByUserAndQuest(
-                                    row.student_id.toString(),
-                                    quest.id.toString()
-                                )
-                            )
-                        );
-
-                        const attemptsTotalScore = attempts
-                            .flat()
-                            .reduce(
-                            (sum, attempt) => sum + (attempt?.total_score_achieved ?? 0),
-                            0
-                            );
-
-                        const testScore = Math.floor(testScoreMap[row.student_id] ?? 0);
-
-                        return {
-                            student_id: row.student_id,
-                            user,
-                            cosmetic,
-                            score: attemptsTotalScore + testScore,
-                        };
-                    })
-                );
-
-                const sortedEntries = userDataEntries.sort((a, b) => b.score - a.score);
-
-                setUserDataMap(
-                    Object.fromEntries(
-                        sortedEntries.map((item) => [item.student_id, item])
-                    )
-                );
+                setUserDataMap(data);
             } catch (error) {
                 logger.error("Failed to fetch data", error);
             }
@@ -186,14 +85,14 @@ export function LeaderboardTable({ courseGroups, hideLeaderboard }: LeaderboardT
         fetchData().catch(() => { return; });
     };
 
-    const sortedRows = React.useMemo(
-        () => {
-        return [...rows].sort((a, b) => {
-            const scoreA = userDataMap[a.student_id]?.score ?? 0;
-            const scoreB = userDataMap[b.student_id]?.score ?? 0;
-            return scoreB - scoreA;
-        });
-    }, [rows, userDataMap]);
+    const sortedRows = React.useMemo(() => {
+        return Object.entries(userDataMap)
+            .sort(([, a], [, b]) => b.score - a.score)
+            .map(([studentId, data]) => ({
+                student_id: Number(studentId),
+                ...data,
+            }));
+    }, [userDataMap]);
 
     const handleClose = (): void => {
         setSelected(-1);
@@ -217,7 +116,7 @@ export function LeaderboardTable({ courseGroups, hideLeaderboard }: LeaderboardT
         [sortedRows, page, rowsPerPage]
     );
 
-    React.useMemo(() => {
+    React.useEffect(() => {
         if(!hideLeaderboard) {showLeaderboard()};
     }, [hideLeaderboard])
 
@@ -245,7 +144,7 @@ export function LeaderboardTable({ courseGroups, hideLeaderboard }: LeaderboardT
                         return (
                         <TableRow
                             hover
-                            onClick={(event) => {handleClick(event, row)}}
+                            onClick={(event) => {handleClick(event, row.student_id)}}
                             aria-checked={isItemSelected}
                             tabIndex={-1}
                             key={row.student_id}
@@ -300,7 +199,7 @@ export function LeaderboardTable({ courseGroups, hideLeaderboard }: LeaderboardT
                                             /> : <UserIcon size={32} color="var(--mui-palette-primary-main)" />
                                         }
                                     </Box>
-                                    {row.student?.nickname}
+                                    {userDataMap[row.student_id]?.user?.nickname}
                                 </Stack>
                             </TableCell>
                             <TableCell align="right">{userDataMap[row.student_id]?.score.toString() ?? 0}</TableCell>
@@ -313,7 +212,7 @@ export function LeaderboardTable({ courseGroups, hideLeaderboard }: LeaderboardT
             <TablePagination
                 rowsPerPageOptions={[5, 10, 25]}
                 component="div"
-                count={rows.length}
+                count={sortedRows.length}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}

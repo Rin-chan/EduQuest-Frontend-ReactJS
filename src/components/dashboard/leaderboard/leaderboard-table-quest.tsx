@@ -9,18 +9,17 @@ import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Popover from '@mui/material/Popover/Popover';
-import { getUserQuestAttemptsByQuest } from '@/api/services/user-quest-attempt';
 import {logger} from "@/lib/default-logger";
 import type { Quest } from "@/types/quest";
 import { AccountPopup } from '../account/account-popup';
-import { getEduquestUser, getEduquestCosmeticDetail } from '@/api/services/eduquest-user';
 import type { EduquestUser, EduquestUserCosmeticResult } from '@/types/eduquest-user';
 import {useTheme} from '@mui/material/styles';
 import {UserAvatar} from "@/components/auth/user-avatar";
 import Avatar from "@mui/material/Avatar";
 import {User as UserIcon} from "@phosphor-icons/react/dist/ssr/User";
 import Stack from "@mui/material/Stack";
-import type { UserQuestAttempt } from '@/types/user-quest-attempt';
+import type { UserData } from '@/types/leaderboard';
+import { getQuestLeaderboard } from '@/api/services/leaderboard';
 
 interface LeaderboardTableQuestProps {
     quest: Quest;
@@ -29,7 +28,6 @@ interface LeaderboardTableQuestProps {
 
 export function LeaderboardTableQuest({ quest, hideLeaderboard }: LeaderboardTableQuestProps): React.JSX.Element {
     const theme = useTheme();
-    const [rows, setRows] = React.useState<UserQuestAttempt[]>([])
     const [selected, setSelected] = React.useState<number>(-1);
     const [page, setPage] = React.useState<number>(0);
     const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
@@ -38,13 +36,7 @@ export function LeaderboardTableQuest({ quest, hideLeaderboard }: LeaderboardTab
 
     const [popupUser, setPopupUser] = React.useState<EduquestUser | null>(null);
     const [popupCosmetic, setPopupCosmetic] = React.useState<EduquestUserCosmeticResult | null>(null);
-    const [userDataMap, setUserDataMap] = React.useState<
-        Record<number, {
-            user: EduquestUser;
-            cosmetic: EduquestUserCosmeticResult | null;
-            score: number;
-        }>
-    >({});
+    const [userDataMap, setUserDataMap] = React.useState<Record<number, UserData>>({});
 
     function formatName(name: string | undefined): string {
         if (!name) return '';
@@ -54,14 +46,14 @@ export function LeaderboardTableQuest({ quest, hideLeaderboard }: LeaderboardTab
 
     const handleClick = (
         event: React.MouseEvent<unknown>,
-        row: UserQuestAttempt
+        studentId: number
     ) => {
-        if (selected === row.student_id) {
+        if (selected === studentId) {
             setSelected(-1);
             return;
         }
 
-        const data = userDataMap[row.student_id];
+        const data = userDataMap[studentId];
 
         if (data) {
             setPopupUser(data.user);
@@ -70,46 +62,19 @@ export function LeaderboardTableQuest({ quest, hideLeaderboard }: LeaderboardTab
 
         setAnchorElPosHorizontal(event.clientX);
         setAnchorElPosVertical(event.clientY);
-        setSelected(row.student_id);
+        setSelected(studentId);
+
+        return;
     };
 
     const showLeaderboard = () => {
         const fetchData = async () => {
             try {
-                const enrollments =
-                    await getUserQuestAttemptsByQuest(
-                        quest.id.toString()
-                    );
-
-                setRows(enrollments);
-
-                const userDataEntries = await Promise.all(
-                    enrollments
-                        .filter((row) => row.student_id)
-                        .map(async (row) => {
-                            const [user] = await Promise.all([
-                                getEduquestUser(row.student_id.toString())
-                            ])
-                            const [cosmetic] = await Promise.all([
-                                getEduquestCosmeticDetail(user.email.toString())
-                            ])
-
-                        return {
-                            student_id: row.student_id,
-                            user,
-                            cosmetic,
-                            score: row.total_score_achieved,
-                        };
-                    })
+                const data = await getQuestLeaderboard(
+                    quest.id.toString()
                 );
 
-                const sortedEntries = userDataEntries.sort((a, b) => b.score - a.score);
-
-                setUserDataMap(
-                    Object.fromEntries(
-                        sortedEntries.map((item) => [item.student_id, item])
-                    )
-                );
+                setUserDataMap(data);
             } catch (error) {
                 logger.error("Failed to fetch data", error);
             }
@@ -119,12 +84,13 @@ export function LeaderboardTableQuest({ quest, hideLeaderboard }: LeaderboardTab
     };
 
     const sortedRows = React.useMemo(() => {
-        return [...rows].sort((a, b) => {
-            const scoreA = userDataMap[a.student_id]?.score ?? 0;
-            const scoreB = userDataMap[b.student_id]?.score ?? 0;
-            return scoreB - scoreA;
-        });
-    }, [rows, userDataMap]);
+        return Object.entries(userDataMap)
+            .sort(([, a], [, b]) => b.score - a.score)
+            .map(([studentId, data]) => ({
+                student_id: Number(studentId),
+                ...data,
+            }));
+    }, [userDataMap]);
 
     const handleClose = (): void => {
         setSelected(-1);
@@ -148,7 +114,7 @@ export function LeaderboardTableQuest({ quest, hideLeaderboard }: LeaderboardTab
         [sortedRows, page, rowsPerPage]
     );
 
-    React.useMemo(() => {
+    React.useEffect(() => {
         if(!hideLeaderboard) {showLeaderboard()};
     }, [hideLeaderboard])
     
@@ -176,7 +142,7 @@ export function LeaderboardTableQuest({ quest, hideLeaderboard }: LeaderboardTab
                             return (
                             <TableRow
                                 hover
-                                onClick={(event) => {handleClick(event, row)}}
+                                onClick={(event) => {handleClick(event, row.student_id)}}
                                 aria-checked={isItemSelected}
                                 tabIndex={-1}
                                 key={row.student_id}
@@ -244,7 +210,7 @@ export function LeaderboardTableQuest({ quest, hideLeaderboard }: LeaderboardTab
                 <TablePagination
                     rowsPerPageOptions={[5, 10, 25]}
                     component="div"
-                    count={rows.length}
+                    count={sortedRows.length}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     onPageChange={handleChangePage}
