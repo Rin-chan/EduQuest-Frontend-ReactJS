@@ -175,19 +175,22 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
     }
   }, [params.courseId]);
 
-  const fetchMyCourseGroups = React.useCallback(async (): Promise<void> => {
-    if (eduquestUser) {
-      try {
-        const response = await getUserCourseGroupEnrollmentsByCourseAndUser(params.courseId, eduquestUser?.id.toString());
-        setUserCourseGroupEnrollments(response);
-        // logger.debug('My course groups', response);
-      } catch (error: unknown) {
-        logger.error('Failed to fetch course group enrollments', error);
-      } finally {
-        setLoadingUserCourseGroupEnrollments(false);
-      }
+  const fetchMyCourseGroups = React.useCallback(async (userId?: string): Promise<void> => {
+    if (!userId) {
+      setLoadingUserCourseGroupEnrollments(false);
+      return;
     }
-  }, [eduquestUser, params.courseId]);
+
+    try {
+      const response = await getUserCourseGroupEnrollmentsByCourseAndUser(params.courseId, userId);
+      setUserCourseGroupEnrollments(response);
+      // logger.debug('My course groups', response);
+    } catch (error: unknown) {
+      logger.error('Failed to fetch course group enrollments', error);
+    } finally {
+      setLoadingUserCourseGroupEnrollments(false);
+    }
+  }, [params.courseId]);
 
   const fetchCourseGroups = React.useCallback(async (): Promise<void> => {
     try {
@@ -244,17 +247,34 @@ export default function Page({ params }: { params: { courseId: string } }) : Rea
     }
   };
 
+  const userId = eduquestUser?.id?.toString();
+  const loadKeyRef = React.useRef<string | null>(null);
+
   React.useEffect(() => {
+    const loadKey = `${params.courseId}:${userId ?? 'anonymous'}`;
+
+    if (loadKeyRef.current === loadKey) {
+      return;
+    }
+
+    loadKeyRef.current = loadKey;
+
     const fetchData = async (): Promise<void> => {
-      await fetchMyCourseGroups();
-      await fetchCourse();
-      await fetchCourseGroups();
+      const tasks: Promise<void>[] = [fetchCourse(), fetchCourseGroups()];
+
+      if (userId) {
+        tasks.push(fetchMyCourseGroups(userId));
+      } else {
+        setLoadingUserCourseGroupEnrollments(false);
+      }
+
+      await Promise.all(tasks);
     };
 
     fetchData().catch((error: unknown) => {
       logger.error('Failed to fetch data', error);
     });
-  }, [fetchMyCourseGroups, fetchCourse, fetchCourseGroups]);
+  }, [fetchCourse, fetchCourseGroups, fetchMyCourseGroups, params.courseId, userId]);
 
   const selectedCourseGroup = React.useMemo(() => {
     if (!courseGroups || !selectedCourseGroupId) {

@@ -8,6 +8,7 @@ import { getDemoAccessToken } from '@/lib/auth/client';
 // Create an Axios instance for general API calls
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
+  timeout: 20000,
 });
 
 // Request interceptor to add Authorization header

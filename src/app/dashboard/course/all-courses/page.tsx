@@ -24,6 +24,7 @@ export default function Page(): React.JSX.Element {
   const [loading, setLoading] = React.useState(true);
   const { eduquestUser, isLoading } = useUser();
   const router = useRouter();
+  const fetchKeyRef = React.useRef<string | null>(null);
 
   const toggleForm = (): void => {
     setShowForm(!showForm);
@@ -50,17 +51,25 @@ export default function Page(): React.JSX.Element {
   };
 
   React.useEffect(() => {
-    if (!isLoading) {
-      if (!eduquestUser?.is_staff) {
-        router.replace(paths.dashboard.overview);
-        setLoading(false);
-        return;
-      }
-
-      fetchCourses().catch((error: unknown) => {
-        logger.error('Unexpected error while fetching courses', error);
-      });
+    if (isLoading) {
+      return;
     }
+
+    if (!eduquestUser?.is_staff) {
+      router.replace(paths.dashboard.overview);
+      setLoading(false);
+      return;
+    }
+
+    const fetchKey = `all-courses:${String(eduquestUser.id)}`;
+    if (fetchKeyRef.current === fetchKey) {
+      return;
+    }
+
+    fetchKeyRef.current = fetchKey;
+    fetchCourses().catch((error: unknown) => {
+      logger.error('Unexpected error while fetching courses', error);
+    });
   }, [isLoading, eduquestUser, router]);
 
   return (

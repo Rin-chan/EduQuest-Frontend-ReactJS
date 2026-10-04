@@ -5,16 +5,23 @@ import { msalConfig, userDataLoginRequest, graphLoginRequest } from "./msal-conf
 import { logger } from '@/lib/default-logger';
 
 export const msalInstance = new PublicClientApplication(msalConfig);
+let msalInitializationPromise: Promise<void> | null = null;
 
 /**
  * Initializes MSAL by handling redirect responses and setting the active account.
  */
 export async function initializeMsal(): Promise<void> {
-  logger.debug("MSAL: Initializing...");
-  await msalInstance.initialize();
-  try {
-    // Handle redirect promise to process the response from loginRedirect
-    const loginResponse: AuthenticationResult | null = await msalInstance.handleRedirectPromise();
+  if (msalInitializationPromise) {
+    await msalInitializationPromise;
+    return;
+  }
+
+  msalInitializationPromise = (async (): Promise<void> => {
+    logger.debug("MSAL: Initializing...");
+    await msalInstance.initialize();
+    try {
+      // Handle redirect promise to process the response from loginRedirect
+      const loginResponse: AuthenticationResult | null = await msalInstance.handleRedirectPromise();
 
     if (loginResponse && loginResponse.account !== null) {
       logger.debug("MSAL: Login response received");
@@ -28,9 +35,16 @@ export async function initializeMsal(): Promise<void> {
       }
     }
 
-    logger.debug("MSAL: Initialization complete.");
-  } catch (error) {
-    logger.error("MSAL: Initialization error:", error);
+      logger.debug("MSAL: Initialization complete.");
+    } catch (error) {
+      logger.error("MSAL: Initialization error:", error);
+    }
+  })();
+
+  try {
+    await msalInitializationPromise;
+  } finally {
+    msalInitializationPromise = null;
   }
 }
 
@@ -41,9 +55,7 @@ export async function getToken(): Promise<string | null> {
   try {
     const activeAccount = msalInstance.getActiveAccount();
     if (!activeAccount) {
-      // No active account, initiate login
-      logger.warn("MSAL: No active account found, initiating login.");
-      await handleLoginRedirect();
+      logger.warn("MSAL: No active account found; skipping token acquisition until the user actually signs in.");
       return null;
     }
 
@@ -55,9 +67,7 @@ export async function getToken(): Promise<string | null> {
     return response.accessToken;
   } catch (error) {
     if (error instanceof InteractionRequiredAuthError) {
-      // Silent acquisition failed, initiate interactive login
-      logger.warn('MSAL: Interaction required, redirecting to login.');
-      await handleLoginRedirect();
+      logger.warn('MSAL: Interaction required; leaving the app in its current auth state instead of forcing a redirect from every request.');
     } else {
       logger.error('MSAL: Unexpected error acquiring token silently:', error);
     }

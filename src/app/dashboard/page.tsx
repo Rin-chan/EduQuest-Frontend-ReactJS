@@ -35,6 +35,7 @@ import { DailyCheckInTask } from "@/components/dashboard/overview/daily-check-in
 
 export default function Page(): React.JSX.Element {
   const { eduquestUser, checkSession } = useUser();
+  const fetchKeyRef = React.useRef<string | null>(null);
   const [userCourseProgression, setUserCourseProgression] = React.useState<UserCourseProgression | null>(null);
   const [analyticsPartOneLoading, setAnalyticsPartOneLoading] = React.useState(true);
   const [analyticsPartTwoLoading, setAnalyticsPartTwoLoading] = React.useState(true);
@@ -110,20 +111,33 @@ export default function Page(): React.JSX.Element {
   }
 
   React.useEffect(() => {
+    if (!eduquestUser) {
+      return;
+    }
+
+    const fetchKey = `dashboard:${String(eduquestUser.id)}`;
+    if (fetchKeyRef.current === fetchKey) {
+      return;
+    }
+
+    fetchKeyRef.current = fetchKey;
+
     const fetchData = async (): Promise<void> => {
       await fetchAnalyticsPartOne();
       await fetchAnalyticsPartTwo();
       await fetchAnalyticsPartThree();
     };
 
-    fetchData().catch((error: unknown) => {
+    void fetchData().catch((error: unknown) => {
       logger.error('Failed to fetch data', error);
     });
 
-    const intervalId = setInterval(fetchData, 60000); // Fetch data every 60 seconds
+    const intervalId = setInterval(() => {
+      void fetchData();
+    }, 60000);
 
-    return () => { clearInterval(intervalId); }; // Clear interval on component unmount
-  }, [fetchAnalyticsPartOne, fetchAnalyticsPartTwo, fetchAnalyticsPartThree]);
+    return () => { clearInterval(intervalId); };
+  }, [eduquestUser, fetchAnalyticsPartOne, fetchAnalyticsPartTwo, fetchAnalyticsPartThree]);
 
   // React.useEffect(() => {
   //   logger.debug('Analytics Part Three', analyticsPartThree);

@@ -54,6 +54,7 @@ export function getDemoAccessToken(): string | null {
  */
 const authApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
+  timeout: 20000,
 });
 
 /**
@@ -188,8 +189,11 @@ class AuthClient {
       };
     }
 
-    // Get the EduquestUser profile
-    const eduquestUser = await this.getEduquestUser(msalUser.username);
+    // Fetch the profile and cosmetics in parallel to reduce login latency.
+    const [eduquestUser, cosmetic] = await Promise.all([
+      this.getEduquestUser(msalUser.username),
+      this.getEduquestUserCosmetic(msalUser.username),
+    ]);
 
     if (eduquestUser === null) {
       return {
@@ -201,8 +205,6 @@ class AuthClient {
         error: 'Failed to fetch user profile.'
       };
     }
-
-    const cosmetic = await this.getEduquestUserCosmetic(msalUser.username);
 
     // Return the user and eduquest user
     return { data: { user: msalUser, eduquestUser, cosmetic } };
